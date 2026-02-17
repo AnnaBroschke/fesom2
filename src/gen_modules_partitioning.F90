@@ -47,6 +47,11 @@ subroutine par_init(partit)    ! initializes MPI
   USE mpp_io
 #endif
 
+#ifdef use_PDAF
+  use parallel_pdaf_mod, &
+       only: init_parallel_pdaf
+#endif
+
   implicit none
   type(t_partit), intent(inout), target :: partit
   integer                               :: i
@@ -59,6 +64,11 @@ subroutine par_init(partit)    ! initializes MPI
 #endif
   call MPI_Comm_Size(partit%MPI_COMM_FESOM,partit%npes,i)
   call MPI_Comm_Rank(partit%MPI_COMM_FESOM,partit%mype,i) 
+
+#ifdef use_PDAF
+  ! Call routine for ensemble parallelization
+  call init_parallel_pdaf(partit%MPI_COMM_FESOM,partit%mype,partit%npes)
+#endif
 
   if(partit%mype==0) then
 #if !defined(__PGI)

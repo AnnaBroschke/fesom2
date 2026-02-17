@@ -149,9 +149,16 @@ elseif(ENABLE_IFS_INTERFACE) # ICEPACK + IFS_INTERFACE NOT SUPPORTED (YET)
 endif()
 
 if(${RECOM_COUPLED})  # ADD RECOM FILES
-   file(GLOB sources_Fortran ${src_home}/*.F90
-                             ${src_home}/int_recom/*.F90
-                             ${src_home}/int_recom/recom/*.F90)
+   if(NOT ${PDAF_ACTIVE})
+          file(GLOB sources_Fortran ${src_home}/*.F90
+                                    ${src_home}/int_recom/*.F90
+                                    ${src_home}/int_recom/recom/*.F90)
+   elseif(${PDAF_ACTIVE})
+          file(GLOB sources_Fortran ${src_home}/*.F90
+                                    ${src_home}/int_recom/*.F90
+                                    ${src_home}/int_recom/recom/*.F90
+                                    ${src_home}/pdaf/*.F90)
+   endif()
 endif()                             
 
 # generate a custom file from fesom_version_info.F90 which includes the current git SHA
@@ -251,6 +258,11 @@ if(${CISO_COUPLED})
    target_compile_definitions(${PROJECT_NAME} PRIVATE __ciso)
 endif()
 
+# Define use_PDAF to implement PDAF.
+if(${PDAF_ACTIVE})
+        target_compile_definitions(${PROJECT_NAME} PRIVATE use_PDAF)
+endif()
+
 # CMAKE_Fortran_COMPILER_ID will also work if a wrapper is being used (e.g. mpif90 wraps ifort -> compiler id is Intel)
 if(${CMAKE_Fortran_COMPILER_ID} STREQUAL  Intel )
    target_compile_options(${PROJECT_NAME} PRIVATE -r8 -i4 -fp-model precise -no-prec-div -no-prec-sqrt -fimf-use-svml -ip -init=zero -no-wrap-margin -fpe0) # add -fpe0 for RAPS environment
@@ -336,6 +348,25 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${YAXT_Fortran_LIBRARIES} ${YAXTC_
 #target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_C ${YACUTILS_Fortran_LIBRARIES} ${YACCORE_Fortran_LIBRARIES})
 #target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_C ${YAXT_Fortran_LIBRARIES} ${YAXTC_Fortran_LIBRARIES})
 
+# Link PDAF library.
+# Before compiling FESOM-REcoM with PDAF the first time, make sure that
+# either: libpdaf-d.a is compiled already. The libpdaf-d.a file should
+# be located in your PDAF_DIR/lib/ directory.
+# Else, libpdaf-d needs to be compiled first:
+# (1) Go to your PDAF_DIR
+# (2) Create empty directories /lib and /include
+# (3) Go to PDAF_DIR/src
+# (4) Include machine-specific definitions in the Makefile
+# (5) Type "make" (or "make ../lib/libpdaf-d.a") to compile the library
+# (6) Now, you find your .mod files in the include directory!
+
+ if(${PDAF_ACTIVE})
+         set(ENV{PDAF_DIR} "${CMAKE_CURRENT_LIST_DIR}/../../PDAF/") # path to PDAF directory starting from the dir containing our CMakeLists.txt
+   message("Linking libpdaf from: $ENV{PDAF_DIR}")
+   target_include_directories(${PROJECT_NAME} PRIVATE $ENV{PDAF_DIR}/include)
+   target_link_libraries(${PROJECT_NAME} PRIVATE $ENV{PDAF_DIR}/lib/libpdaf-d.a)
+   target_link_libraries(${PROJECT_NAME} PRIVATE $ENV{PDAF_DIR}/lib/libpdaf-var.a)
+ endif()
    
 # fesom.x executable
 add_executable(${PROJECT_NAME}.x ${src_home}/fesom_main.F90)
