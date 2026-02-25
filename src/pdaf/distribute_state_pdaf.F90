@@ -32,7 +32,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
        only: daynew, timenew, nlmax, mesh_fesom, topography_p, &
        mydim_nod2d, myDim_elem2D, eDim_nod2D, eDim_elem2D, &
       eta_n, uv, wvel, tracers, uvnode, a_ice, &
-      partit, exchange_nod, exchange_elem
+      partit, exchange_nod, exchange_elem, dynamics
 
   implicit none
   
@@ -55,7 +55,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
 
   
   ! Set debug output
-  debugmode = .false.
+  debugmode = .true.
 
 ! **********************
 ! *** Initialization ***
@@ -74,15 +74,14 @@ subroutine distribute_state_pdaf(dim_p, state_p)
   else do_dist
      if (mype_submodel==0) write (*,'(a,3x,a,i5)') &
           'FESOM-PDAF', 'distribute_state_pdaf, task: ', task_id
-    
+ 
+
      ! ensure to distribute fields with valid topography at first call
      if (first_call) then
         if (writepe) write (*,'(a,8x,a)') 'FESOM-PDAF', 'Distribute_state: set topography'
         state_p = state_p * topography_p
         first_call = .false.
      end if
-
-
 ! *******************************************
 ! *** Initialize model fields from state  ***
 ! *** Each model PE knows its sub-state   ***
@@ -99,7 +98,6 @@ subroutine distribute_state_pdaf(dim_p, state_p)
   ! * uvnode(2,:,:)   (1, nl-1, myDim_nod2D + eDim_nod2D)   ! Velocity v interpolated on nodes
   ! * a_ice          (myDim_nod2D + eDim_nod2D)            ! Sea-ice concentration
   ! ***
-  
      ! SSH (1)
      do i = 1, myDim_nod2D
         eta_n(i) = state_p(i + sfields(id%SSH)%off)
@@ -131,14 +129,13 @@ subroutine distribute_state_pdaf(dim_p, state_p)
       ! 2. interpolate update from nodes to elements
      allocate(U_elem_upd(2, mesh_fesom%nl-1, myDim_elem2D+eDim_elem2D))
      U_elem_upd = 0.0
-
      call compute_vel_elems(U_node_upd,U_elem_upd)
 
      ! 3. add update to model velocity on elements (UV)
      UV = UV + U_elem_upd
 
      ! 4. adjust diagnostic model velocity on nodes (UVnode)
-     call compute_vel_nodes(mesh_fesom)
+     call compute_vel_nodes(dynamics, partit, mesh_fesom)
 
 
   ! w (4) velocity: not updated and thus no need to distribute.
@@ -151,15 +148,12 @@ subroutine distribute_state_pdaf(dim_p, state_p)
   ! Temp and salt are included in tracer field loop.
   ! Sea-ice concentration is needed in PDAF to not assimilate SST at sea-ice locations.
   ! But sea-ice itself is not assimilated, thus sea-ice update is not distributed to the model.
-
   
 ! *********************************
 ! *** Initialize external nodes ***
 ! *********************************
-
      call exchange_nod(eta_n, partit)            ! SSH
      call exchange_elem(UV(:,:,:), partit)       ! u and v (element-wise)
-
 
 ! *********************************
 ! *** Model 3D tracers          ***
@@ -185,7 +179,6 @@ subroutine distribute_state_pdaf(dim_p, state_p)
 
         end if
      enddo 
-
 
 ! ********************
 ! *** Debug output ***
@@ -229,6 +222,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
 
      ! clean up:
      deallocate(U_node_upd,U_elem_upd)
+
 
   end if do_dist
 

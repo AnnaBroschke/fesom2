@@ -108,6 +108,8 @@ subroutine init_pdaf(nsteps, mesh)
 ! ***   Initialize PDAF   ***
 ! ***************************
 
+ ! CALL PDAF_set_debug_flag(1-mype_world)
+
   call timeit(3, 'old')
   call timeit(4, 'new')
 
