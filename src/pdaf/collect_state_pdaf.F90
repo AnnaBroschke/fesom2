@@ -30,7 +30,8 @@ subroutine collect_state_pdaf(dim_p, state_p)
        only: nlmax, daynew, timenew, mydim_nod2d, &
        eta_n, uv, wvel, tracers, uvnode, MLD1, MLD2, & !sigma0, &
        GloPCO2surf, GloCO2flux, PAR3D, & ! export, Diags3D, 
-       a_ice ! PistonVelocity, alphaCO2, 
+       a_ice! ,& ! PistonVelocity, alphaCO2, 
+       !Reflec
 
   implicit none
   
@@ -167,7 +168,13 @@ subroutine collect_state_pdaf(dim_p, state_p)
 !      state_p(i + sfields(id% PistonVel)%off) = PistonVelocity(i) ! Air-sea gas transfer velocity
 !   enddo
 
-  ! diagnostic biogeochemical 3D fields
+!Reflectance
+
+!   do i = 1, myDim_nod2D
+!       state_p(i + sfields(id%Reflec)%off)     = Reflec(i)     ! Reflectance below surfce
+!   enddo
+ 
+! diagnostic biogeochemical 3D fields
   s = 0
   do i = 1, myDim_nod2D
      do k = 1, nlmax        

@@ -26,7 +26,7 @@ subroutine monthly_event(do_output)
   logical :: do_output
 
   if (day_in_month==num_day_in_month(fleapyear,month) .and. &
-       timenew==86400.) then
+       timenew == 86400.) then
      do_output=.true.
   else
      do_output=.false.

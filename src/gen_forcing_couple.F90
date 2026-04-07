@@ -99,6 +99,10 @@ subroutine update_atm_forcing(istep, ice, tracers, dynamics, partit, mesh)
   use gen_bulk
   use force_flux_consv_interface
 
+!#ifdef use_PDAF
+!    use atmos_ens_stochasticity
+!#endif
+
   implicit none
   integer,        intent(in)            :: istep
   type(t_ice)   , intent(inout), target :: ice
@@ -484,6 +488,13 @@ subroutine update_atm_forcing(istep, ice, tracers, dynamics, partit, mesh)
 #else
 #ifndef __ifsinterface
   call sbc_do(partit, mesh)
+
+#ifdef use_PDAF
+ ! *** Add stochastic variability to an ensemble of atmospheric forcings *** 
+   call atmos_ens_stochasticity(istep)
+#endif
+
+
 !$OMP PARALLEL DO
   DO n=1, myDim_nod2D+eDim_nod2D
      u_wind(n)    = atmdata(i_xwind,n)

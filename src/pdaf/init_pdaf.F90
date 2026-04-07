@@ -65,11 +65,10 @@ subroutine init_pdaf(nsteps, mesh)
        rms_obs_S, rms_obs_T, &
        path_obs_prof, file_prof_prefix, file_prof_suffix, &
        bias_obs_prof, prof_exclude_diff
-  use mod_atmos_ens_stochasticity, &
+ use mod_atmos_ens_stochasticity, &
        only: disturb_xwind, disturb_ywind, disturb_humi, &
        disturb_qlw, disturb_qsr, disturb_tair, &
-       disturb_prec, disturb_snow, disturb_mslp, &
-       init_atmos_ens_stochasticity, init_atmos_stochasticity_output,&
+       disturb_prec, disturb_snow, disturb_mslp, & !  init_atmos_ens_stochasticity, init_atmos_stochasticity_output,&
        atmos_stochasticity_ON, path_atm_cov
   use means_pdaf, &
        only: init_means_pdaf

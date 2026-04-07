@@ -55,7 +55,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
 
   
   ! Set debug output
-  debugmode = .true.
+  debugmode = .false.
 
 ! **********************
 ! *** Initialization ***

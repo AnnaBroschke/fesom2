@@ -750,6 +750,7 @@ contains
     
 #ifdef use_PDAF
     CALL finalize_pdaf()
+    CALL write_atmos_stoch_restart()
 #endif
 
 #if defined (__oifs) 

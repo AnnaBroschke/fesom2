@@ -32,6 +32,8 @@ module fesom_pdaf
   use REcoM_GloVar, &
        only: GloPCO2surf, GloCO2flux, PAR3D
   !, Diags3D, export, PistonVelocity, alphaCO2
+  use REcoM_spectral, ONLY: tlam
+
 
   implicit none
 
