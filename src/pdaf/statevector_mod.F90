@@ -16,6 +16,7 @@
 !! __Revision history__
 !! ~2022 Frauke - initial functionality distributed over different routines
 !! 2025-12 - Lars Nerger - restructuring code introducing module statevector_pdaf
+!! 2026-04 - Anna Broschke - restructing code intoducing varible state vector setup
 module statevector_pdaf
 
 
@@ -49,6 +50,8 @@ module statevector_pdaf
      integer :: PistonVel = 0 ! nc
   ! Nutrints
      integer :: DIN = 0 !j nut
+     integer :: DSi = 0 
+     integer :: Fe = 0
   ! Phytoplankton
      ! small Phytoplankton
      integer :: PhyChl = 0   ! ja  phyt ! chlorophyll
@@ -251,13 +254,14 @@ contains
 
 ! *** Arguments ***
     integer, intent(out) :: nfields
-    integer :: cnt
+    integer :: cnt, i
+    !integer, allocatable  :: Reflec(:)
     namelist /state_vector/ sv_physics, sv_ice, sv_carbon, sv_nutrients, &
             sv_phytoplankton, sv_zooplankton, sv_detritus, sv_other, &
             sv_diagnostics, sv_reflectance
 
 #ifdef RECOM_WAVEBANDS
-    allocate(Reflec(lam))
+    allocate(id%Reflec(tlam))
 #endif
 
     open  (20,file=nmlfile)
@@ -306,6 +310,10 @@ contains
       if (sv_nutrients) then
               cnt = cnt +1
               id%DIN    = cnt
+              cnt = cnt +1
+              id%DSi    =cnt
+              cnt = cnt +1
+              id%Fe     =cnt
       end if
 
       if (sv_phytoplankton) then
@@ -462,6 +470,8 @@ contains
     logical :: upd_PistonVel = .false.
 
     logical :: upd_DIN = .false.
+    logical :: upd_DSi =.false.
+    logical :: upd_Fe = .false.
 
     logical :: upd_PhyCalc = .false.
     logical :: upd_PhyC = .false.
@@ -508,7 +518,7 @@ contains
          upd_ssh, upd_u, upd_v, upd_w, upd_temp, upd_salt,&     ! Physic 
          upd_ice, &                                             ! ice
          upd_DIC, upd_DOC, upd_Alk,upd_pCO2s, upd_CO2f, upd_alphaCO2, upd_PistonVel, &  ! carbon
-         upd_DIN, &                                             ! nutrients
+         upd_DIN, upd_DSi, upd_Fe, &                            ! nutrients
          upd_PhyCalc, upd_PhyC, upd_PhyN, upd_PhyChl, &         ! small phyto
          upd_DiaN, upd_DiaC, upd_DiaSi, upd_DiaChl, &           ! diatoms
          upd_Zo1C, upd_Zo1N, upd_Zo2C, upd_Zo2N, &              ! zooplankton
@@ -522,7 +532,6 @@ contains
     read  (20,NML=updated)
     close (20)
     
-    if (mype_world==0) write(*,*) 'namelist updated read in '
 
 
 ! ****************
@@ -539,7 +548,6 @@ contains
                 sfields(id_var)%updated = upd_ssh
                 sfields(id_var)%bgc = .false.
         endif
-        if (mype_world==0) write(*,*) 'ssh sfields set up'
 
 ! u
         id_var = id%u
@@ -730,10 +738,33 @@ contains
                 sfields(id_var)%tridfesom = 1001  
         endif
 
-    !sfields(id%       )%trnumfesom = 20 ! DSi
-    !sfields(id%       )%trnumfesom = 21 ! Fe
-    !sfields(id%       )%tridfesom = 1018 ! DSi
-    !sfields(id%       )%tridfesom = 1019 ! Fe
+! DSi
+        id_var = id%DSi
+        if (id_var > 0) then
+                sfields(id_var)%ndims = 2
+                sfields(id_var)%nz1 = .true.
+                sfields(id_var)%variable = 'DSi'
+                sfields(id_var)%long_name = 'Dissolved inorganic Silicate'
+                sfields(id_var)%units = 'mmol(N)* m^{-3}'
+                sfields(id_var)%updated = upd_DSi
+                sfields(id_var)%bgc = .true.
+                sfields(id_var)%trnumfesom = 20
+                sfields(id_var)%tridfesom = 1018
+        endif
+
+! Fe
+        id_var = id%Fe
+        if (id_var > 0) then
+                sfields(id_var)%ndims = 2
+                sfields(id_var)%nz1 = .true.
+                sfields(id_var)%variable = 'Fe'
+                sfields(id_var)%long_name = 'Iron'
+                sfields(id_var)%units = 'mmol(N)* m^{-3}'
+                sfields(id_var)%updated = upd_Fe
+                sfields(id_var)%bgc = .true.
+                sfields(id_var)%trnumfesom = 21
+                sfields(id_var)%tridfesom = 1019
+        endif
 
 ! **********************
 ! *** Chlorophyll   ****
@@ -1162,7 +1193,6 @@ contains
                 sfields(id_var)%updated = upd_export
                 sfields(id_var)%bgc = .true.
         endif
-        if (mype_world==0) write(*,*) 'setup alles auser reflectance '
 
     !~ ! TChl
     !~ sfields(id%TChl)%ndims = 2
@@ -1193,9 +1223,8 @@ contains
 ! *****************************
 
 ! Reflectance
-
+#ifdef RECOM_WAVEBANDS
         do cnt = 1, tlam
-                if (mype_world==0) write(*,*) 'Reflectance loop ', cnt, tlam
                 id_var = id%Reflec(cnt)
                 if (id_var > 0) then
                         sfields(id_var)%ndims = 1
@@ -1206,6 +1235,7 @@ contains
                         sfields(id_var)%bgc = .true.
                endif
         end do
+#endif
 
 ! **************************************
 ! ***   Set dimensions and offsets   ***
