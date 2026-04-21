@@ -70,38 +70,38 @@ subroutine collect_state_pdaf(dim_p, state_p)
    ! ***
 
   ! SSH
-  do i = 1, myDim_nod2D
-     state_p(i + sfields(id%SSH)%off) = eta_n(i)
-  end do
+!  do i = 1, myDim_nod2D
+!     state_p(i + sfields(id%SSH)%off) = eta_n(i)
+!  end do
 
   ! u and v velocities (interpolated on nodes)
    
   ! U
-  s = sfields(id%u)%off
-  do i = 1, myDim_nod2D
-     do k =1, nlmax
-        s = s + 1
-        state_p(s) = UVnode(1, k, i)
-     end do
-  end do
+ ! s = sfields(id%u)%off
+ ! do i = 1, myDim_nod2D
+ !    do k =1, nlmax
+ !       s = s + 1
+ !       state_p(s) = UVnode(1, k, i)
+ !    end do
+ ! end do
 
   ! V
-  s = sfields(id%v)%off
-  do i = 1, myDim_nod2D
-     do k =1, nlmax
-        s = s + 1
-        state_p(s) = UVnode(2, k, i)
-     end do
-  end do
+  !s = sfields(id%v)%off
+  !do i = 1, myDim_nod2D
+  !   do k =1, nlmax
+  !      s = s + 1
+  !      state_p(s) = UVnode(2, k, i)
+  !   end do
+  !end do
 
   ! w velocity
-  s = sfields(id%w)%off
-  do i = 1, myDim_nod2D
-     do k = 1, nlmax
-        s = s + 1
-        state_p(s) = wvel(k, i)
-     end do
-  end do
+  !s = sfields(id%w)%off
+  !do i = 1, myDim_nod2D
+  !   do k = 1, nlmax
+  !      s = s + 1
+  !      state_p(s) = wvel(k, i)
+  !   end do
+  !end do
    
   ! temp and salt are model 3D tracers.
    
@@ -113,14 +113,14 @@ subroutine collect_state_pdaf(dim_p, state_p)
   end do
 
   ! MLD1
-  do i = 1, myDim_nod2D
-     state_p(i + sfields(id%MLD1)%off) = MLD1(i)
-  end do
+  !do i = 1, myDim_nod2D
+  !   state_p(i + sfields(id%MLD1)%off) = MLD1(i)
+  !end do
 
   ! MLD2
-  do i = 1, myDim_nod2D
-     state_p(i + sfields(id%MLD2)%off) = MLD2(i)
-  end do
+  !do i = 1, myDim_nod2D
+  !   state_p(i + sfields(id%MLD2)%off) = MLD2(i)
+  !end do
    
   ! potential density
 !   s = sfields(id%sigma)%off
@@ -148,13 +148,13 @@ subroutine collect_state_pdaf(dim_p, state_p)
   enddo
 
   ! biogeochem 2D fields
-  do i = 1, myDim_nod2D
-     state_p(i + sfields(id% pCO2s)%off)    = GloPCO2surf(i)    ! surface ocean partial pressure CO2
-  enddo
+  !do i = 1, myDim_nod2D
+  !   state_p(i + sfields(id% pCO2s)%off)    = GloPCO2surf(i)    ! surface ocean partial pressure CO2
+  !enddo
 
-  do i = 1, myDim_nod2D
-     state_p(i + sfields(id% CO2f)%off)     = GloCO2flux(i)     ! CO2 flux (from atmosphere into ocean)
-  enddo
+  !do i = 1, myDim_nod2D
+  !   state_p(i + sfields(id% CO2f)%off)     = GloCO2flux(i)     ! CO2 flux (from atmosphere into ocean)
+  !enddo
 
 !   do i = 1, myDim_nod2D
 !      state_p(i + sfields(id% export)%off)    = export(i)         ! Export through particle sinking
@@ -175,13 +175,13 @@ subroutine collect_state_pdaf(dim_p, state_p)
 !   enddo
  
 ! diagnostic biogeochemical 3D fields
-  s = 0
-  do i = 1, myDim_nod2D
-     do k = 1, nlmax        
-        s = s + 1
-        state_p(s + sfields(id% PAR)%off)    = PAR3D(k, i)      ! photosynthetically active radiation
-     enddo
-  enddo
+ ! s = 0
+ ! do i = 1, myDim_nod2D
+ !    do k = 1, nlmax        
+ !       s = s + 1
+ !       state_p(s + sfields(id% PAR)%off)    = PAR3D(k, i)      ! photosynthetically active radiation
+ !    enddo
+ ! enddo
 
 !   s = 0
 !   do i = 1, myDim_nod2D
@@ -207,88 +207,88 @@ subroutine collect_state_pdaf(dim_p, state_p)
   ! Check whether analysis step was done
   call PDAF_get_assim_flag(assim_flag)
 
-  writedebug:  if (debugmode .and. assim_flag>0 .and. mype_world==0) then
-
-     ! print state vector
-     write(day_string, '(i3.3)') daynew
-     write(tim_string, '(i5.5)') int(timenew)
-     fileID_debug=10
-     open(unit=fileID_debug, file='collect_state_pdaf_'//day_string//'_'//tim_string//'.txt', status='unknown')
-
-     ! SSH
-     do i = 1, myDim_nod2D
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%SSH)%variable, i+sfields(id%SSH)%off, eta_n(i)
-     end do
-
-     ! U
-     s = sfields(id%u)%off
-     do i = 1, myDim_nod2D
-        do k =1, nlmax
-           s = s + 1
-           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%u)%variable, s, UVnode(1, k, i)
-        end do
-     end do
-   
-     ! V
-     s = sfields(id%v)%off
-     do i = 1, myDim_nod2D
-        do k =1, nlmax
-           s = s + 1
-           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%v)%variable, s, UVnode(2, k, i)
-        end do
-     end do
- 
-     ! w velocity
-     s = sfields(id%w)%off
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = s + 1
-           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%w)%variable, s, wvel(k, i)
-        end do
-     end do
+  !writedebug:  if (debugmode .and. assim_flag>0 .and. mype_world==0) then
+!
+!     ! print state vector
+!     write(day_string, '(i3.3)') daynew
+!     write(tim_string, '(i5.5)') int(timenew)
+!     fileID_debug=10
+!     open(unit=fileID_debug, file='collect_state_pdaf_'//day_string//'_'//tim_string//'.txt', status='unknown')
+!
+!     ! SSH
+!     do i = 1, myDim_nod2D
+!        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%SSH)%variable, i+sfields(id%SSH)%off, eta_n(i)
+!     end do
+!
+!     ! U
+!     s = sfields(id%u)%off
+!     do i = 1, myDim_nod2D
+!        do k =1, nlmax
+!           s = s + 1
+!           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%u)%variable, s, UVnode(1, k, i)
+!        end do
+!     end do
+!   
+!     ! V
+!     s = sfields(id%v)%off
+!     do i = 1, myDim_nod2D
+!        do k =1, nlmax
+!           s = s + 1
+!           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%v)%variable, s, UVnode(2, k, i)
+!        end do
+!     end do
+!
+!     ! w velocity
+!     s = sfields(id%w)%off
+!     do i = 1, myDim_nod2D
+!        do k = 1, nlmax
+!           s = s + 1
+!           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%w)%variable, s, wvel(k, i)
+!        end do
+!     end do
 
      ! temp and salt are model 3D tracers.
    
      ! sea-ice concentration
-     s = sfields(id%a_ice)%off
-     do i = 1, myDim_nod2D
-        s = s + 1
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%a_ice)%variable, s, a_ice(i)
-     end do
+ !    s = sfields(id%a_ice)%off
+ !    do i = 1, myDim_nod2D
+ !       s = s + 1
+ !       write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%a_ice)%variable, s, a_ice(i)
+ !    end do
 
      ! MLD1
-     do i = 1, myDim_nod2D
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%MLD1)%variable, i+sfields(id%MLD1)%off, MLD1(i)
-     end do
+ !    do i = 1, myDim_nod2D
+ !       write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%MLD1)%variable, i+sfields(id%MLD1)%off, MLD1(i)
+ !    end do
 
      ! MLD2
-     do i = 1, myDim_nod2D
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%MLD2)%variable, i+sfields(id%MLD2)%off, MLD2(i)
-     end do
+ !    do i = 1, myDim_nod2D
+ !       write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%MLD2)%variable, i+sfields(id%MLD2)%off, MLD2(i)
+ !    end do
       
      ! biogeochem 2D fields
-     do i = 1, myDim_nod2D   
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%pCO2s    )%variable, i + sfields(id% pCO2s)%off   , GloPCO2surf(i)    
-        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%CO2f     )%variable, i + sfields(id% CO2f)%off    , GloCO2flux(i)     
+  !   do i = 1, myDim_nod2D   
+  !      write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%pCO2s    )%variable, i + sfields(id% pCO2s)%off   , GloPCO2surf(i)    
+  !      write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%CO2f     )%variable, i + sfields(id% CO2f)%off    , GloCO2flux(i)     
 !        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%export   )%variable, i + sfields(id% export)%off   , export(i)         
 !        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%alphaCO2 )%variable, i + sfields(id% alphaCO2)%off , alphaCO2(i)       
 !        write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%PistonVel)%variable, i + sfields(id% PistonVel)%off, PistonVelocity(i) 
-     enddo
+   !  enddo
 
      ! diagnostic biogeochemical 3D fields
-     s = 0
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = s + 1
-           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%PAR  )%variable, s + sfields(id% PAR)%off , PAR3D(k, i)     
+    ! s = 0
+    ! do i = 1, myDim_nod2D
+    !    do k = 1, nlmax
+    !       s = s + 1
+    !       write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%PAR  )%variable, s + sfields(id% PAR)%off , PAR3D(k, i)     
 !           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%NPPn )%variable, s + sfields(id% NPPn)%off, diags3D(k, i, 1)
 !           write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%NPPd )%variable, s + sfields(id% NPPd)%off, diags3D(k, i, 2)
-        enddo
-     enddo
+     !   enddo
+     !enddo
 
      ! Close debug-file
-     close(fileID_debug)
+     !close(fileID_debug)
 
-  end if writedebug
+  !end if writedebug
   
 end subroutine collect_state_pdaf

@@ -88,9 +88,6 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   use obs_n_merged_pdafomi, &
         only: assim_o_n_merged, n_merged_excl_absolute, n_merged_excl_relative, &
               mean_n_p
-  use corrections_pdaf, &
-       only: correct_state, store_stddev
-              
   use netcdf
 
   implicit none
@@ -186,7 +183,8 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! *** Corrections to state vector fields          ***
 ! ***************************************************
 
-  call correct_state(step, dim_ens, ens_p)
+  ! not called because salt, SST, SSH not included in state vector
+  !call correct_state(step, dim_ens, ens_p)
 
 
 ! ************************************************************
@@ -245,39 +243,39 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      ! -- SST --
      ! save mean_sst_p
-     if ((sst_exclude_diff > 0.0) .and. assim_o_sst) then
-        if (mype_filter==0) write (*,'(a, 8x,a)') &
-             'FESOM-PDAF', '--- save ensemble mean forecast SST for observation exclusion'
-        if (allocated(mean_sst_p)) deallocate(mean_sst_p)
-        allocate (mean_sst_p(myDim_nod2D))
-        do i = 1, myDim_nod2D
-           mean_sst_p(i) = state_p(sfields(id% temp)%off + (i-1) * (nlmax) + 1)
-        end do
-     end if
+     !if ((sst_exclude_diff > 0.0) .and. assim_o_sst) then
+     !   if (mype_filter==0) write (*,'(a, 8x,a)') &
+     !        'FESOM-PDAF', '--- save ensemble mean forecast SST for observation exclusion'
+     !   if (allocated(mean_sst_p)) deallocate(mean_sst_p)
+     !   allocate (mean_sst_p(myDim_nod2D))
+     !   do i = 1, myDim_nod2D
+     !      mean_sst_p(i) = state_p(sfields(id% temp)%off + (i-1) * (nlmax) + 1)
+     !   end do
+     !end if
 
      ! -- SSS (CASE SMOS) --
      ! save mean_sss_p
-     if ((sss_exclude_diff > 0.0) .and. assim_o_sss) then
-        if (mype_filter==0) write (*,'(a, 8x,a)') &
-             'FESOM-PDAF', '--- save ensemble mean forecast SSS for observation exclusion'
-        if (allocated(mean_sss_p)) deallocate(mean_sss_p)
-        allocate (mean_sss_p(myDim_nod2D))
-        do i = 1, myDim_nod2D
-           mean_sss_p(i) = state_p(sfields(id% salt)%off + (i-1) * (nlmax) + 1)
-        end do
-     end if
+     !if ((sss_exclude_diff > 0.0) .and. assim_o_sss) then
+     !   if (mype_filter==0) write (*,'(a, 8x,a)') &
+     !        'FESOM-PDAF', '--- save ensemble mean forecast SSS for observation exclusion'
+     !   if (allocated(mean_sss_p)) deallocate(mean_sss_p)
+     !   allocate (mean_sss_p(myDim_nod2D))
+     !   do i = 1, myDim_nod2D
+     !      mean_sss_p(i) = state_p(sfields(id% salt)%off + (i-1) * (nlmax) + 1)
+     !   end do
+     !end if
 
      ! -- SSS (CASE CCI) --
      ! save mean_sss_cci_p
-     if ((sss_cci_exclude_diff > 0.0) .and. assim_o_sss_cci) then
-        if (mype_filter==0) write (*,'(a, 8x,a)') &
-             'FESOM-PDAF', '--- save ensemble mean forecast SSS for observation exclusion'
-        if (allocated(mean_sss_cci_p)) deallocate(mean_sss_cci_p)
-        allocate (mean_sss_cci_p(myDim_nod2D))
-        do i = 1, myDim_nod2D
-           mean_sss_cci_p(i) = state_p(sfields(id% salt)%off + (i-1) * (nlmax) + 1)
-        end do
-     end if
+     !if ((sss_cci_exclude_diff > 0.0) .and. assim_o_sss_cci) then
+     !   if (mype_filter==0) write (*,'(a, 8x,a)') &
+     !        'FESOM-PDAF', '--- save ensemble mean forecast SSS for observation exclusion'
+     !   if (allocated(mean_sss_cci_p)) deallocate(mean_sss_cci_p)
+     !   allocate (mean_sss_cci_p(myDim_nod2D))
+     !   do i = 1, myDim_nod2D
+     !      mean_sss_cci_p(i) = state_p(sfields(id% salt)%off + (i-1) * (nlmax) + 1)
+     !   end do
+     !end if
      
      ! -- Chlorophyll --
      ! save mean_chl_cci_p
@@ -294,25 +292,25 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
      
      ! -- 3D temperature field --
      ! save mean_temp_p
-     if ((assim_o_en4_t .or. assim_o_en4_s) .and. (prof_exclude_diff > 0.0)) then
-        if (mype_filter==0) write (*,'(a, 8x,a)') &
-             'FESOM-PDAF', '--- save ensemble mean temperature (3D) for observation exclusion'
-        ! Store mean temperature for profile assimilation
-        if (allocated(mean_temp_p)) deallocate(mean_temp_p)
-        allocate (mean_temp_p(sfields(id%temp)%dim))
-        mean_temp_p = state_p(sfields(id%temp)%off+1 : sfields(id%temp)%off+sfields(id%temp)%dim)
-     end if
+     !if ((assim_o_en4_t .or. assim_o_en4_s) .and. (prof_exclude_diff > 0.0)) then
+     !   if (mype_filter==0) write (*,'(a, 8x,a)') &
+     !        'FESOM-PDAF', '--- save ensemble mean temperature (3D) for observation exclusion'
+     !   ! Store mean temperature for profile assimilation
+     !   if (allocated(mean_temp_p)) deallocate(mean_temp_p)
+     !   allocate (mean_temp_p(sfields(id%temp)%dim))
+     !   mean_temp_p = state_p(sfields(id%temp)%off+1 : sfields(id%temp)%off+sfields(id%temp)%dim)
+     !end if
      
      ! -- oxygen --
      ! save mean_o2_p
-     if (((o2_merged_excl_absolute > 0.0) .or. (o2_merged_excl_relative > 0.0)) &
-          .and. assim_o_o2_merged) then
-        if (mype_filter==0) write (*,'(a, 8x,a)') &
-             'FESOM-PDAF', '--- save ensemble mean forecast oxygen for observation exclusion'
-        if (allocated(mean_O2_p)) deallocate(mean_O2_p)
-        allocate (mean_O2_p(sfields(id%O2)%dim))
-        mean_O2_p = state_p(sfields(id%O2)%off+1 : sfields(id%O2)%off+sfields(id%O2)%dim)
-     end if
+     !if (((o2_merged_excl_absolute > 0.0) .or. (o2_merged_excl_relative > 0.0)) &
+     !     .and. assim_o_o2_merged) then
+     !   if (mype_filter==0) write (*,'(a, 8x,a)') &
+     !        'FESOM-PDAF', '--- save ensemble mean forecast oxygen for observation exclusion'
+     !   if (allocated(mean_O2_p)) deallocate(mean_O2_p)
+     !   allocate (mean_O2_p(sfields(id%O2)%dim))
+     !   mean_O2_p = state_p(sfields(id%O2)%off+1 : sfields(id%O2)%off+sfields(id%O2)%dim)
+     !end if
      
      ! -- nitrate --
      ! save mean_n_p
@@ -336,88 +334,88 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   factor_mass = mesh_fesom%areasvol(:nlmax,:myDim_nod2D) * hnode_new(:nlmax,:myDim_nod2D) / SecondsPerDay
   factor_conc = 1.0 / SecondsPerDay
 
-  if ((step-step_null)<0) then
+!  if ((step-step_null)<0) then
   ! forecast phase
   ! get fmass and fconc before analysis step
   
-     if (mype_filter == 0) &
-          write(*, *) 'FESOM-PDAF', '--- compute carbon diagnostics at forecast'
-
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = (i-1) * (nlmax) + k ! index in state vector
-           ! DIC
-           cffields(id_s_asml_dic)%fconc(k, i) = state_p(s + sfields(id%DIC)%off)
-           ! Alk
-           cffields(id_s_asml_alk)%fconc(k, i) = state_p(s + sfields(id%Alk)%off)
-           ! Living carbon biomass
-           cffields(id_s_asml_livingmatter)%fconc(k, i) = &
-                (state_p(s + sfields(id%PhyC)%off) &
-                + state_p(s + sfields(id%DiaC)%off) &
-                + state_p(s + sfields(id%Zo1C)%off) &
-                + state_p(s + sfields(id%Zo2C)%off) &
-                + state_p(s + sfields(id%PhyCalc)%off))
-           ! Dead organic carbon
-           cffields(id_s_asml_deadmatter)%fconc(k, i) = &
-                (state_p(s + sfields(id%DOC)%off)     &
-                + state_p(s + sfields(id%DetC)%off)    &
-                + state_p(s + sfields(id%DetCalc)%off) &
-                + state_p(s + sfields(id%Det2C)%off)   &
-                + state_p(s + sfields(id%Det2Calc)%off))
-        enddo ! k=1,nlmax
-     enddo ! i=1,my_Dim_nod2D
-    
-     ! convert concentration to mass
-     do s=1, size(cffieldsasml)
-        i = cffieldsasml(s)
-        cffields(i)%fmass = cffields(i)%fconc * factor_mass
-        cffields(i)%fconc = cffields(i)%fconc * factor_conc
-     enddo
-
-  endif ! (forecast phase)
-  
-  if ((step-step_null)>0) then
-     ! analysis phase
-     ! get amass and aconc after analysis step
-  
-     if (mype_filter == 0) &
-          write(*, *) 'FESOM-PDAF', '--- compute carbon diagnostics at analysis'
-  
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = (i-1) * (nlmax) + k ! index in state vector
-           ! DIC
-           cffields(id_s_asml_dic)%aconc (k, i) = state_p(s + sfields(id%DIC)%off)
-           ! Alk
-           cffields(id_s_asml_alk)%aconc (k, i) = state_p(s + sfields(id%Alk)%off)
-           ! Living carbon biomass
-           cffields(id_s_asml_livingmatter)%aconc (k, i) = &
-                (state_p(s + sfields(id%PhyC)%off) &
-                + state_p(s + sfields(id%DiaC)%off) &
-                + state_p(s + sfields(id%Zo1C)%off) &
-                + state_p(s + sfields(id%Zo2C)%off) &
-                + state_p(s + sfields(id%PhyCalc)%off))
-           ! Dead organic carbon
-           cffields(id_s_asml_deadmatter)%aconc (k, i) = &
-                (state_p(s + sfields(id%DOC)%off)     &
-                + state_p(s + sfields(id%DetC)%off)    &
-                + state_p(s + sfields(id%DetCalc)%off) &
-                + state_p(s + sfields(id%Det2C)%off)   &
-                + state_p(s + sfields(id%Det2Calc)%off))
-        enddo ! k=1,nlmax
-     enddo ! i=1,my_Dim_nod2D
-
-     ! convert concentration to mass
-     do s=1, size(cffieldsasml)
-        i = cffieldsasml(s)
-        cffields(i)%amass = cffields(i)%aconc * factor_mass
-        cffields(i)%aconc = cffields(i)%aconc * factor_conc
-     enddo
-
-     ! save the difference of forecast and analysis
-     call cfluxes_diags_output_tmean_asml()
-  
-  endif ! (analysis phase)
+!     if (mype_filter == 0) &
+!          write(*, *) 'FESOM-PDAF', '--- compute carbon diagnostics at forecast'
+!
+!     do i = 1, myDim_nod2D
+!        do k = 1, nlmax
+!           s = (i-1) * (nlmax) + k ! index in state vector
+!           ! DIC
+!           cffields(id_s_asml_dic)%fconc(k, i) = state_p(s + sfields(id%DIC)%off)
+!           ! Alk
+!           cffields(id_s_asml_alk)%fconc(k, i) = state_p(s + sfields(id%Alk)%off)
+!           ! Living carbon biomass
+!           cffields(id_s_asml_livingmatter)%fconc(k, i) = &
+!                (state_p(s + sfields(id%PhyC)%off) &
+!                + state_p(s + sfields(id%DiaC)%off) &
+!                + state_p(s + sfields(id%Zo1C)%off) &
+!                + state_p(s + sfields(id%Zo2C)%off) &
+!                + state_p(s + sfields(id%PhyCalc)%off))
+!           ! Dead organic carbon
+!           cffields(id_s_asml_deadmatter)%fconc(k, i) = &
+!                (state_p(s + sfields(id%DOC)%off)     &
+!                + state_p(s + sfields(id%DetC)%off)    &
+!                + state_p(s + sfields(id%DetCalc)%off) &
+!                + state_p(s + sfields(id%Det2C)%off)   &
+!                + state_p(s + sfields(id%Det2Calc)%off))
+!        enddo ! k=1,nlmax
+!     enddo ! i=1,my_Dim_nod2D
+!    
+!     ! convert concentration to mass
+!     do s=1, size(cffieldsasml)
+!        i = cffieldsasml(s)
+!        cffields(i)%fmass = cffields(i)%fconc * factor_mass
+!        cffields(i)%fconc = cffields(i)%fconc * factor_conc
+!     enddo
+!
+!  endif ! (forecast phase)
+!  
+!  if ((step-step_null)>0) then
+!     ! analysis phase
+!     ! get amass and aconc after analysis step
+!  
+!     if (mype_filter == 0) &
+!          write(*, *) 'FESOM-PDAF', '--- compute carbon diagnostics at analysis'
+!  
+!     do i = 1, myDim_nod2D
+!        do k = 1, nlmax
+!           s = (i-1) * (nlmax) + k ! index in state vector
+!           ! DIC
+!           cffields(id_s_asml_dic)%aconc (k, i) = state_p(s + sfields(id%DIC)%off)
+!           ! Alk
+!           cffields(id_s_asml_alk)%aconc (k, i) = state_p(s + sfields(id%Alk)%off)
+!           ! Living carbon biomass
+!           cffields(id_s_asml_livingmatter)%aconc (k, i) = &
+!                (state_p(s + sfields(id%PhyC)%off) &
+!                + state_p(s + sfields(id%DiaC)%off) &
+!                + state_p(s + sfields(id%Zo1C)%off) &
+!                + state_p(s + sfields(id%Zo2C)%off) &
+!                + state_p(s + sfields(id%PhyCalc)%off))
+!           ! Dead organic carbon
+!           cffields(id_s_asml_deadmatter)%aconc (k, i) = &
+!                (state_p(s + sfields(id%DOC)%off)     &
+!                + state_p(s + sfields(id%DetC)%off)    &
+!                + state_p(s + sfields(id%DetCalc)%off) &
+!                + state_p(s + sfields(id%Det2C)%off)   &
+!                + state_p(s + sfields(id%Det2Calc)%off))
+!        enddo ! k=1,nlmax
+!     enddo ! i=1,my_Dim_nod2D
+!
+!     ! convert concentration to mass
+!     do s=1, size(cffieldsasml)
+!        i = cffieldsasml(s)
+!        cffields(i)%amass = cffields(i)%aconc * factor_mass
+!        cffields(i)%aconc = cffields(i)%aconc * factor_conc
+!     enddo
+!
+!     ! save the difference of forecast and analysis
+!     call cfluxes_diags_output_tmean_asml()
+!  
+!  endif ! (analysis phase)
   
 
 
@@ -446,7 +444,8 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   stdev_p = sqrt(stdev_p)
 
   ! Store standard deviation of SSH used for corrections after analysis step
-  CALL store_stddev(step, stdev_p)
+  ! not called because SSH not in state vector
+  !CALL store_stddev(step, stdev_p)
 
   
   ! -----------------------------------------------------------------------------------------------------
@@ -520,32 +519,32 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
   ! Display RMS errors
   if (mype_filter==0) then
-     write (*,'(a, 10x,a)') &
-          'FESOM-PDAF', 'Ensemble standard deviation:'
-     write (*,'(a,7x,    a14,   a14,   a14,   a14,  a14, /a, 10x,70a)') &
-          'FESOM-PDAF', 'CO2f','pCO2','temp','DIC','Alk', &
-          'FESOM-PDAF', ('-',i=1,70)
-     write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
-          'FESOM-PDAF', stdev_surf_g(id%CO2f  ,1), &
-                        stdev_surf_g(id%pCO2s ,1), &
-                        stdev_surf_g(id%temp  ,1), &
-                        stdev_surf_g(id%DIC   ,1), &
-                        stdev_surf_g(id%Alk   ,1), &
-                       'surface STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
-     write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
-          'FESOM-PDAF', stdev_surf_g(id%CO2f  ,11), &
-                        stdev_surf_g(id%pCO2s ,11), &
-                        stdev_surf_g(id%temp  ,11), &
-                        stdev_surf_g(id%DIC   ,11), &
-                        stdev_surf_g(id%Alk   ,11), &
-                       '90-100m STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
-     write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
-          'FESOM-PDAF', stdev_volo_g(id%CO2f ), &
-                        stdev_volo_g(id%pCO2s), &
-                        stdev_volo_g(id%temp ), &
-                        stdev_volo_g(id%DIC  ), &
-                        stdev_volo_g(id%Alk  ), &
-                       'vol oce STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
+   !  write (*,'(a, 10x,a)') &
+   !       'FESOM-PDAF', 'Ensemble standard deviation:'
+   !  write (*,'(a,7x,    a14,   a14,   a14,   a14,  a14, /a, 10x,70a)') &
+   !       'FESOM-PDAF', 'CO2f','pCO2','temp','DIC','Alk', &
+   !       'FESOM-PDAF', ('-',i=1,70)
+   !  write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
+   !       'FESOM-PDAF', stdev_surf_g(id%CO2f  ,1), &
+   !                     stdev_surf_g(id%pCO2s ,1), &
+   !                     stdev_surf_g(id%temp  ,1), &
+   !                     stdev_surf_g(id%DIC   ,1), &
+   !                     stdev_surf_g(id%Alk   ,1), &
+   !                    'surface STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
+   !  write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
+   !       'FESOM-PDAF', stdev_surf_g(id%CO2f  ,11), &
+   !                     stdev_surf_g(id%pCO2s ,11), &
+   !                     stdev_surf_g(id%temp  ,11), &
+   !                     stdev_surf_g(id%DIC   ,11), &
+   !                     stdev_surf_g(id%Alk   ,11), &
+   !                    '90-100m STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
+   !  write (*,'(a,10x,  5es14.4, 3x,a13,a1,/a, 10x,70a)')  &
+   !       'FESOM-PDAF', stdev_volo_g(id%CO2f ), &
+   !                     stdev_volo_g(id%pCO2s), &
+   !                     stdev_volo_g(id%temp ), &
+   !                     stdev_volo_g(id%DIC  ), &
+   !                     stdev_volo_g(id%Alk  ), &
+   !                    'vol oce STDEV', typestr, 'FESOM-PDAF', ('-',i=1,70)
   end if
   
 ! *******************************

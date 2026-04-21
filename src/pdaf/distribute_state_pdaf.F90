@@ -99,43 +99,43 @@ subroutine distribute_state_pdaf(dim_p, state_p)
   ! * a_ice          (myDim_nod2D + eDim_nod2D)            ! Sea-ice concentration
   ! ***
      ! SSH (1)
-     do i = 1, myDim_nod2D
-        eta_n(i) = state_p(i + sfields(id%SSH)%off)
-     end do
-
-     ! u (2) and v (3) velocities
-     ! 1. calculate update on nodes, i.e. analysis state (state_p) minus not-yet-updated model state (Unode)
-     allocate(U_node_upd(2, mesh_fesom%nl-1, myDim_nod2D+eDim_nod2D))
-     U_node_upd = 0.0
-
-     ! u
-     s = sfields(id%u)%off
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = s + 1
-           U_node_upd(1, k, i) = state_p(s) - UVnode(1, k, i)
-        end do
-     end do
-
-     ! v
-     s = sfields(id%v)%off
-     do i = 1, myDim_nod2D
-        do k = 1, nlmax
-           s = s + 1
-           U_node_upd(2, k, i) = state_p(s) - UVnode(2, k, i)
-        end do
-     end do
-
-      ! 2. interpolate update from nodes to elements
-     allocate(U_elem_upd(2, mesh_fesom%nl-1, myDim_elem2D+eDim_elem2D))
-     U_elem_upd = 0.0
-     call compute_vel_elems(U_node_upd,U_elem_upd)
-
-     ! 3. add update to model velocity on elements (UV)
-     UV = UV + U_elem_upd
-
-     ! 4. adjust diagnostic model velocity on nodes (UVnode)
-     call compute_vel_nodes(dynamics, partit, mesh_fesom)
+!     do i = 1, myDim_nod2D
+!        eta_n(i) = state_p(i + sfields(id%SSH)%off)
+!     end do
+!
+!     ! u (2) and v (3) velocities
+!     ! 1. calculate update on nodes, i.e. analysis state (state_p) minus not-yet-updated model state (Unode)
+!     allocate(U_node_upd(2, mesh_fesom%nl-1, myDim_nod2D+eDim_nod2D))
+!     U_node_upd = 0.0
+!
+!     ! u
+!     s = sfields(id%u)%off
+!     do i = 1, myDim_nod2D
+!        do k = 1, nlmax
+!           s = s + 1
+!           U_node_upd(1, k, i) = state_p(s) - UVnode(1, k, i)
+!        end do
+!     end do
+!
+!     ! v
+!     s = sfields(id%v)%off
+!     do i = 1, myDim_nod2D
+!        do k = 1, nlmax
+!           s = s + 1
+!           U_node_upd(2, k, i) = state_p(s) - UVnode(2, k, i)
+!        end do
+!     end do
+!
+!      ! 2. interpolate update from nodes to elements
+!     allocate(U_elem_upd(2, mesh_fesom%nl-1, myDim_elem2D+eDim_elem2D))
+!     U_elem_upd = 0.0
+!     call compute_vel_elems(U_node_upd,U_elem_upd)
+!
+!     ! 3. add update to model velocity on elements (UV)
+!     UV = UV + U_elem_upd
+!
+!     ! 4. adjust diagnostic model velocity on nodes (UVnode)
+!     call compute_vel_nodes(dynamics, partit, mesh_fesom)
 
 
   ! w (4) velocity: not updated and thus no need to distribute.
@@ -184,44 +184,44 @@ subroutine distribute_state_pdaf(dim_p, state_p)
 ! *** Debug output ***
 ! ********************
 
-     writedebug: if (debugmode .and. mype_world==0) then
+!     writedebug: if (debugmode .and. mype_world==0) then
+!
+!        ! print state vector
+!        write(day_string, '(i3.3)') daynew
+!        write(tim_string, '(i5.5)') int(timenew)
+!        fileID_debug=20
+!        open(unit=fileID_debug, file='distribute_state_pdaf_'//day_string//'_'//tim_string//'.txt', status='unknown')
 
-        ! print state vector
-        write(day_string, '(i3.3)') daynew
-        write(tim_string, '(i5.5)') int(timenew)
-        fileID_debug=20
-        open(unit=fileID_debug, file='distribute_state_pdaf_'//day_string//'_'//tim_string//'.txt', status='unknown')
+ !!       ! SSH (1)
+ !       do i = 1, myDim_nod2D
+ !          write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') &
+ !               sfields(id%SSH)%variable, i+sfields(id%SSH)%off, eta_n(i), state_p(s)
+ !       end do
 
-        ! SSH (1)
-        do i = 1, myDim_nod2D
-           write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') &
-                sfields(id%SSH)%variable, i+sfields(id%SSH)%off, eta_n(i), state_p(s)
-        end do
+ !       ! u (2) and v (3) velocities
+!
+!        s = sfields(id%u)%off
+!        do i = 1, myDim_nod2D
+!           do k = 1, nlmax
+!              s = s + 1
+!              write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') sfields(id%u)%variable, s, UVnode(1, k, i), state_p(s)
+!           end do
+!        end do
+!
+!        s = sfields(id%v)%off
+!        do i = 1, myDim_nod2D
+!           do k = 1, nlmax
+!              s = s + 1
+!              write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') sfields(id%v)%variable, s, UVnode(2, k, i), state_p(s)
+!           end do
+!        end do
+!
+!        close(fileID_debug)
 
-        ! u (2) and v (3) velocities
-
-        s = sfields(id%u)%off
-        do i = 1, myDim_nod2D
-           do k = 1, nlmax
-              s = s + 1
-              write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') sfields(id%u)%variable, s, UVnode(1, k, i), state_p(s)
-           end do
-        end do
-
-        s = sfields(id%v)%off
-        do i = 1, myDim_nod2D
-           do k = 1, nlmax
-              s = s + 1
-              write(fileID_debug, '(a10,1x,i8,1x,G15.6,G15.6)') sfields(id%v)%variable, s, UVnode(2, k, i), state_p(s)
-           end do
-        end do
-
-        close(fileID_debug)
-
-     end if writedebug
+!     end if writedebug
 
      ! clean up:
-     deallocate(U_node_upd,U_elem_upd)
+!     deallocate(U_node_upd,U_elem_upd)
 
 
   end if do_dist
