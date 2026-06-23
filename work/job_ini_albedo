@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=clidyn.p_fesom # edit your account
+#SBATCH --account=computing.p_specbic # edit your account
 #SBATCH --job-name=ini
 #SBATCH --partition=mpp
 #SBATCH --time=00:30:00
@@ -13,6 +13,7 @@ set -x
 ulimit -s unlimited
 
 source ../env/albedo/shell
+export LD_LIBRARY_PATH=/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-vmvv2ho/lib:$LD_LIBRARY_PATH
 
 ln -s ../bin/fesom_ini.x         .           # cp -n ../bin/fvom_ini.x
 cp -n ../config/namelist.config  .

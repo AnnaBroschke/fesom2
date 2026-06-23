@@ -34,4 +34,6 @@ subroutine init_n_domains_pdaf(step, n_domains_p)
 
   n_domains_p = n_sweeps * myDim_nod2D
 
+
+
 end subroutine init_n_domains_pdaf

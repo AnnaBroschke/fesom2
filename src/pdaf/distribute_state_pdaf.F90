@@ -229,7 +229,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
      end if writedebug
 
      ! clean up:
-     deallocate(U_node_upd,U_elem_upd)
+     if (id%u > 0 .and. id%v > 0)  deallocate(U_node_upd,U_elem_upd)
 
 
   end if do_dist

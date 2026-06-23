@@ -16,7 +16,8 @@ subroutine init_pdaf(nsteps, mesh)
   use mpi
   use PDAF, only: &                                                       ! PDAF functions
        PDAF3_init, PDAF_set_iparam, PDAF_init_forecast, &
-       PDAFomi_get_domain_limits_unstr, PDAF_reset_forget
+       PDAFomi_get_domain_limits_unstr, PDAF_reset_forget, &
+       PDAF_set_debug_flag
   use timer, only: timeit
   use statevector_pdaf, &
        only: setup_statevector, sfields, id, nfields, &
@@ -106,8 +107,7 @@ subroutine init_pdaf(nsteps, mesh)
 ! ***************************
 ! ***   Initialize PDAF   ***
 ! ***************************
-
- ! CALL PDAF_set_debug_flag(1-mype_world)
+!CALL PDAF_set_debug_flag(1)
 
   call timeit(3, 'old')
   call timeit(4, 'new')

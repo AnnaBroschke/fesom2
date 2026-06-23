@@ -90,6 +90,8 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
         only: assim_o_n_merged, n_merged_excl_absolute, n_merged_excl_relative, &
               mean_n_p
   use netcdf
+  use corrections_pdaf, &
+     only: store_stddev, correct_state
 
   implicit none
   save

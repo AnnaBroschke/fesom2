@@ -29,10 +29,10 @@ subroutine collect_state_pdaf(dim_p, state_p)
        only: id, sfields, nfields
   use fesom_pdaf, &
        only: nlmax, daynew, timenew, mydim_nod2d, &
-       eta_n, uv, wvel, tracers, uvnode, MLD1, MLD2, & !sigma0, &
+       eta_n, uv, wvel, tracers, uvnode,& ! MLD1, MLD2,sigma0, &
        GloPCO2surf, GloCO2flux, PAR3D, & ! export, Diags3D, 
-       a_ice! ,& ! PistonVelocity, alphaCO2, 
-       !Reflec
+       a_ice ,& ! PistonVelocity, alphaCO2, 
+       Reflec, tlam
 
   implicit none
   
@@ -41,7 +41,7 @@ subroutine collect_state_pdaf(dim_p, state_p)
   real, intent(inout) :: state_p(dim_p)   !< Local state vector
 
 ! *** Local variables
-  integer :: i, k, b, s, istate, ifesom   !< Counters
+  integer :: i, k, b, s, istate, ifesom, cnt   !< Counters
   
 ! Debugging:
   logical            :: debugmode
@@ -182,10 +182,18 @@ subroutine collect_state_pdaf(dim_p, state_p)
   end if
 
 !Reflectance
-
-!   do i = 1, myDim_nod2D
-!       state_p(i + sfields(id%Reflec)%off)     = Reflec(i)     ! Reflectance below surfce
-!   enddo
+!ToDo wichtig nicht klar welche dimension Reflec hat und welchen einfluss auf modell
+!write (*,*) 'FESOM-PDAF REFLEC', size(Reflec)
+!  do cnt =1, tlam
+!        write (*,*) 'FESOM-PDAF REFLEC', size(Reflec(cnt))
+ !       s = sfields(id%Reflec(cnt))%off
+ !       do i = 1, myDim_nod2D
+ !               s = s + 1
+ !               state_p(s) = Reflec(i)
+ !       end do
+ ! end if
+ !       cnt = cnt+1
+ ! end do
  
 ! diagnostic biogeochemical 3D fields
  if (id%PAR >0 ) then

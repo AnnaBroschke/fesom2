@@ -30,39 +30,39 @@ module statevector_pdaf
   ! This is grouped but the groups can be changed
   type field_ids
   ! Physics
-     integer :: ssh = 0  !nein physik       ! physics
-     integer :: u = 0 !nein physik
-     integer :: v = 0 !n p
-     integer :: w = 0 ! n p
-     integer :: temp = 0 !n p
-     integer :: salt = 0  !n p
-     integer :: MLD1 = 0 ! n p
-     integer :: MLD2 = 0 ! np
+     integer :: ssh = 0         ! Sea Surface Hight
+     integer :: u = 0           ! Zonal velocity (interpolated on nodes)
+     integer :: v = 0           ! Meridional velocity (interpolated on nodes)
+     integer :: w = 0           ! Vertical velocity
+     integer :: temp = 0        ! Themperature
+     integer :: salt = 0        ! Salinity
+     integer :: MLD1 = 0        ! Mixed Layer Depth !diagnostic
+     integer :: MLD2 = 0        ! Mixed Layer Depth !diagnostic
   ! ice
-     integer :: a_ice = 0 ! ja nicht updatei
+     integer :: a_ice = 0       ! Sea-ice concentration
   ! Carbon
-     integer :: DIC = 0   ! nein c     ! dissolved tracers
-     integer :: DOC = 0 ! n c
-     integer :: Alk = 0 ! n c
-     integer :: pCO2s = 0  ! n c    ! surface carbon diagnostics
-     integer :: CO2f = 0 ! nc
-     integer :: alphaCO2 = 0 ! nc
-     integer :: PistonVel = 0 ! nc
+     integer :: DIC = 0         ! Dissolved inorganic carbon
+     integer :: DOC = 0         ! Dissolved organic carbon
+     integer :: Alk = 0         ! Alkalinity
+     integer :: pCO2s = 0       ! Partial pressure CO2 surface ocean ! diagnostic
+     integer :: CO2f = 0        ! CO2 flux from atmosphere into ocean ! diagnostic
+     integer :: alphaCO2 = 0    ! solubility of surface CO2 ! diagnostic
+     integer :: PistonVel = 0   ! air-sea piston velocity ! diagnostic
   ! Nutrints
-     integer :: DIN = 0 !j nut
-     integer :: DSi = 0 
-     integer :: Fe = 0
+     integer :: DIN = 0         ! Dissolved inorganic nitrogen
+     integer :: DSi = 0         ! Dissolved inorganic Silicate
+     integer :: Fe = 0          ! Iron
   ! Phytoplankton
      ! small Phytoplankton
-     integer :: PhyChl = 0   ! ja  phyt ! chlorophyll
-     integer :: PhyN = 0   !j phyt    ! small phyto
-     integer :: PhyC = 0 !j phyt
-     integer :: PhyCalc = 0 !ja phyt
+     integer :: PhyChl = 0      ! intracell chlorophyll small phytoplankton
+     integer :: PhyN = 0        ! intracell nitrogen small phytoplankton
+     integer :: PhyC = 0        ! intracell carbon small phytoplankton
+     integer :: PhyCalc = 0     ! intracell carbonate small phytoplankton
      ! Diatoms
-     integer :: DiaChl = 0 ! ja phytii
-     integer :: DiaN = 0  ! j phyt    ! diatoms
-     integer :: DiaC = 0!j phyt
-     integer :: DiaSi = 0 ! j phyt
+     integer :: DiaChl = 0      ! intracell chlorophyll diatoms
+     integer :: DiaN = 0        ! intracell nitrogen diatoms
+     integer :: DiaC = 0        !intracell carbon diatoms
+     integer :: DiaSi = 0       ! intracell silicate diatoms
      ! ToDo insert 4p Phytoplankton
      !integer :: CoccoN    ! Coccos
      !integer :: CoccoC
@@ -71,31 +71,39 @@ module statevector_pdaf
      !integer :: PhaeoC
      !integer :: PhaeoChl
   ! Zooplankton
-     integer :: Zo1C = 0   ! n zoo    ! zooplanktoni
-     integer :: Zo1N = 0!n zoo
-     integer :: Zo2C = 0 !n zoo
-     integer :: Zo2N = 0 !  n zoo
-     ! ToDo insert 3dt zooplankton with ifndef
+     integer :: Zo1C = 0        ! carbon in small zooplankton
+     integer :: Zo1N = 0        ! nitrogen in small zooplankton
+     integer :: Zo2C = 0        ! carbon in macrozooplankton
+     integer :: Zo2N = 0        ! Nitrogen in macrozooplankton
+     integer :: Zo3C = 0        ! Microzooplankton carbon
+     integer :: Zo3N = 0        ! Microzooplankton nitrogen
   ! Detritus
-     integer :: DetC = 0   !n det    ! detritus
-     integer :: DetCalc = 0 !n det
-     integer :: DetSi = 0 !n det
-     integer :: DetN = 0 !n det
-     integer :: Det2C = 0 !n det
-     integer :: Det2Calc = 0 ! n det
-     integer :: Det2Si = 0 ! n det
-     integer :: Det2N = 0 ! n det
+     integer :: DetC = 0        ! carbon in small detritus
+     integer :: DetCalc = 0     ! calcite in small detritus
+     integer :: DetSi = 0       ! silicate in small detritus
+     integer :: DetN = 0        ! nitrogen in small detritus
+     integer :: Det2C = 0       ! carbon in large detritus
+     integer :: Det2Calc = 0    ! calcite in large detritus
+     integer :: Det2Si = 0      ! Silicate in large detritus
+     integer :: Det2N = 0       ! nitrogen in large detritus
   ! Other
-     integer :: DON = 0 ! n oth
-     integer :: O2 = 0 ! nein oth
-     integer :: PAR = 0   ! n oth
-     integer :: sigma = 0 ! n other     
+     integer :: DON = 0         ! Disolves organic carbon
+     integer :: O2 = 0          ! Oxygen
+     integer :: PAR = 0         ! photosynthetically active radiation
+     integer :: sigma = 0       ! potential density
   ! Diagnostics
-     integer :: NPPn = 0 ! j diag
-     integer :: NPPd = 0 ! ja diag
-     integer :: export = 0 ! ja diag
+     integer :: NPPn = 0        ! mean net primary production small phytoplankton
+     integer :: NPPd = 0        ! mean net primary production diatoms
+     integer :: export = 0      ! export through particle sinking at 190m
+     !INTEGER :: TChl = 0       ! Total chlorophyll = PhyChl + DiaChl
+     !INTEGER :: TDN = 0        ! Total dissolved N = DIN + DON
+     !INTEGER :: TOC = 0        ! Total organic carbon: PhyC + DiaC + DetC + DOC + HetC
   ! Reflectance
-     integer, allocatable  :: Reflec(:)
+     integer, allocatable  :: Edz3D (:)        ! Downwelling direct stream of light 
+     integer, allocatable  :: Esz3D (:)        ! Downwelling diffuse stream of light
+     integer, allocatable  :: Euz3D (:)        ! Upwelling stream of light
+     integer, allocatable  :: Eutop3D (:)      ! Direct stream of light on top of layer
+     !integer, allocatable  :: Estop3D (:,:,:)      ! Diffuse stream of light on top of layer
 
 !     INTEGER :: TChl   ! Total chlorophyll = PhyChl + DiaChl
 !     INTEGER :: TDN    ! Total dissolved N = DIN + DON
@@ -143,7 +151,6 @@ module statevector_pdaf
   logical :: sv_other = .false.
   logical :: sv_diagnostics = .false.
   logical :: sv_reflectance = .false.
-  
 
   !---- The next variables usually do not need editing -----
 
@@ -254,14 +261,16 @@ contains
 
 ! *** Arguments ***
     integer, intent(out) :: nfields
-    integer :: cnt, i
-    !integer, allocatable  :: Reflec(:)
+    integer :: cnt, i, l
     namelist /state_vector/ sv_physics, sv_ice, sv_carbon, sv_nutrients, &
             sv_phytoplankton, sv_zooplankton, sv_detritus, sv_other, &
             sv_diagnostics, sv_reflectance
 
 #ifdef RECOM_WAVEBANDS
-    allocate(id%Reflec(tlam))
+  !  allocate( Edz3D (nl -1,node_size,tlam))  
+  !  allocate( Esz3D (nl -1,node_size,tlam))
+  !  allocate( Euz3D (nl -1,node_size,tlam))
+  !  allocate( Eutop3D (nl -1,node_size,tlam))
 #endif
 
     open  (20,file=nmlfile)
@@ -354,6 +363,10 @@ contains
                id%Zo2N   = cnt
                cnt = cnt +1
                id%Zo2C   = cnt
+               cnt = cnt +1
+               id%Zo3N   = cnt
+               cnt = cnt +1
+               id%Zo3C   = cnt 
        end if
 
        if (sv_detritus) then
@@ -395,14 +408,30 @@ contains
                id%export = cnt
        end if
 
-#ifdef RECOM_WAVEBANDS
        if (sv_reflectance) then
-               DO i = 1, tlam
+               !allocate spectral varibles
+              allocate(id%Edz3D(tlam))
+              allocate(id%Esz3D(tlam))
+              allocate(id%Euz3D(tlam))
+              allocate(id%Eutop3D(tlam))
+
+               do l = 1, tlam
                    cnt = cnt +1
-                   id%Reflec(i) = cnt
-               END DO
+                   id%Edz3D(l) = cnt
+               end do                   !a lot of loops so the order is Edz3D for all wavelegnth and then next varible for all waavelegth
+               do l = 1, tlam
+                   cnt = cnt +1
+                   id%Esz3D(l) = cnt
+               end do
+               do l = 1, tlam
+                   cnt = cnt +1
+                   id%Euz3D(l) = cnt
+               end do
+               do l = 1, tlam
+                   cnt = cnt +1
+                   id%Eutop3D(l) = cnt
+               end do
        end if
-#endif
 
 
 
@@ -452,6 +481,9 @@ contains
 ! *** Local variables ***
     integer :: i, cnt           ! Counter
     integer :: id_var           ! varible for id number of varible which fills sfields 
+    character(len=10), dimension(tlam) :: lams  !hard coded for wavelength names in spectral varibles
+
+    ! logical varibles if varible should be updated defined in namelist
     logical :: upd_ssh = .false. 
     logical :: upd_u  = .false.
     logical :: upd_v = .false.
@@ -486,6 +518,8 @@ contains
     logical :: upd_Zo1N = .false.
     logical :: upd_Zo2C = .false.
     logical :: upd_Zo2N = .false.
+    logical :: upd_Zo3C = .false.
+    logical :: upd_Zo3N = .false.
 
     logical :: upd_DetC = .false.
     logical :: upd_DetCalc = .false.
@@ -505,7 +539,10 @@ contains
     logical :: upd_NPPd = .false.
     logical :: upd_export = .false.
 
-    logical :: upd_Reflec = .false.
+    logical :: upd_Edz3D = .false.
+    logical :: upd_Esz3D = .false.
+    logical :: upd_Euz3D = .false.
+    logical :: upd_Eutop3D = .false.
 
 ! *** Allocate ***
 
@@ -521,17 +558,19 @@ contains
          upd_DIN, upd_DSi, upd_Fe, &                            ! nutrients
          upd_PhyCalc, upd_PhyC, upd_PhyN, upd_PhyChl, &         ! small phyto
          upd_DiaN, upd_DiaC, upd_DiaSi, upd_DiaChl, &           ! diatoms
-         upd_Zo1C, upd_Zo1N, upd_Zo2C, upd_Zo2N, &              ! zooplankton
+         upd_Zo1C, upd_Zo1N, upd_Zo2C, upd_Zo2N, upd_Zo3C, upd_Zo3N, &              ! zooplankton
          upd_DetC, upd_DetCalc, upd_DetSi, upd_DetN     , &     ! small det
          upd_Det2C, upd_Det2N, upd_Det2Si, upd_Det2Calc , &     ! large det
          upd_DON, upd_O2, upd_PAR, upd_sigma, &                 ! other
          upd_NPPn, upd_NPPd,upd_export, &                       ! diagnostics
-         upd_Reflec                                             ! reflectance
+         upd_Edz3D, upd_Esz3D, upd_Euz3D, upd_Eutop3D           ! reflectance
 
     open  (20,file=nmlfile)
     read  (20,NML=updated)
     close (20)
-    
+
+! *** Define spectral bands for naming sfields correctly ***
+     lams = [character(len=10) :: "400","425","450","475","500","525","550","575","600","625","650","675","700"]
 
 
 ! ****************
@@ -745,7 +784,7 @@ contains
                 sfields(id_var)%nz1 = .true.
                 sfields(id_var)%variable = 'DSi'
                 sfields(id_var)%long_name = 'Dissolved inorganic Silicate'
-                sfields(id_var)%units = 'mmol(N)* m^{-3}'
+                sfields(id_var)%units = 'mmol* m^{-3}'
                 sfields(id_var)%updated = upd_DSi
                 sfields(id_var)%bgc = .true.
                 sfields(id_var)%trnumfesom = 20
@@ -759,7 +798,7 @@ contains
                 sfields(id_var)%nz1 = .true.
                 sfields(id_var)%variable = 'Fe'
                 sfields(id_var)%long_name = 'Iron'
-                sfields(id_var)%units = 'mmol(N)* m^{-3}'
+                sfields(id_var)%units = 'umol* m^{-3}'
                 sfields(id_var)%updated = upd_Fe
                 sfields(id_var)%bgc = .true.
                 sfields(id_var)%trnumfesom = 21
@@ -995,6 +1034,33 @@ contains
                 sfields(id_var)%tridfesom = 1023
         endif
 
+! Zoo3
+! Zo3C
+        id_var = id%Zo3C
+        if (id_var > 0) then
+                sfields(id_var)%ndims = 2
+                sfields(id_var)%variable = 'Zo3C'
+                sfields(id_var)%long_name = 'carbon in Microzooplankton'
+                sfields(id_var)%units = 'mmol* m^{-3}'
+                sfields(id_var)%updated = upd_Zo3C
+                sfields(id_var)%bgc = .true.
+                sfields(id_var)%trnumfesom = 30
+                sfields(id_var)%tridfesom = 1036
+        endif
+
+! Zo3N
+        id_var = id%Zo3N
+        if (id_var > 0) then
+                sfields(id_var)%ndims = 2
+                sfields(id_var)%variable = 'Zo3N'
+                sfields(id_var)%long_name = 'nitrogen in Microzooplankton'
+                sfields(id_var)%units = 'mmol* m^{-3}'
+                sfields(id_var)%updated = upd_Zo2N
+                sfields(id_var)%bgc = .true.
+                sfields(id_var)%trnumfesom = 29
+                sfields(id_var)%tridfesom = 1035
+        endif
+
 ! *****************************
 ! ***       Detritus       ****
 ! *****************************
@@ -1222,21 +1288,57 @@ contains
 ! *** Reflectance          ****
 ! *****************************
 
-! Reflectance
-#ifdef RECOM_WAVEBANDS
+! Downwelling direct
         do cnt = 1, tlam
-                id_var = id%Reflec(cnt)
+                id_var = id%Edz3D(cnt)
                 if (id_var > 0) then
-                        sfields(id_var)%ndims = 1
-                        sfields(id_var)%variable = 'Reflec'
-                        sfields(id_var)%long_name = 'Reflectance of spectral bande below surface'
-                        sfields(id_var)%units = '-'
-                        sfields(id_var)%updated = upd_Reflec
+                        sfields(id_var)%ndims = 2
+                        sfields(id_var)%variable = 'Edz3D' //' '// lams(cnt)
+                        sfields(id_var)%long_name = 'Downwelling direct stream of light'
+                        sfields(id_var)%units = 'W * m^{-2}'
+                        sfields(id_var)%updated = upd_Edz3D
                         sfields(id_var)%bgc = .true.
                endif
         end do
-#endif
+        
+! Downwelling diffuse
+        do cnt = 1, tlam
+                id_var = id%Esz3D(cnt)
+                if (id_var > 0) then
+                        sfields(id_var)%ndims = 2
+                        sfields(id_var)%variable = 'Esz3D' //' '// lams(cnt)
+                        sfields(id_var)%long_name = 'Downwelling diffuse stream of light'
+                        sfields(id_var)%units = 'W * m^{-2}'
+                        sfields(id_var)%updated = upd_Esz3D
+                        sfields(id_var)%bgc = .true.
+               endif
+        end do
 
+! Upwelling        
+        do cnt = 1, tlam
+                id_var = id%Euz3D(cnt)
+                if (id_var > 0) then
+                        sfields(id_var)%ndims = 2
+                        sfields(id_var)%variable = 'Euz3D' //' '// lams(cnt)
+                        sfields(id_var)%long_name = 'Upwelling stream of light'
+                        sfields(id_var)%units = 'W * m^{-2}'
+                        sfields(id_var)%updated = upd_Euz3D
+                        sfields(id_var)%bgc = .true.
+               endif
+        end do
+
+! Upwelling top of layer        
+        do cnt = 1, tlam
+                id_var = id%Eutop3D(cnt)
+                if (id_var > 0) then
+                        sfields(id_var)%ndims = 2
+                        sfields(id_var)%variable = 'Eutop3D' //' '// lams(cnt)
+                        sfields(id_var)%long_name = 'Upwelling stream of light on the surface of each layer'
+                        sfields(id_var)%units = 'W * m^{-2}'
+                        sfields(id_var)%updated = upd_Eutop3D
+                        sfields(id_var)%bgc = .true.
+               endif
+        end do
 ! **************************************
 ! ***   Set dimensions and offsets   ***
 ! **************************************
@@ -1256,7 +1358,7 @@ contains
     end do
 
 ! *** Specify offset of fields in pe-local state vector ***
-
+!
 !    . . . A . . . . . B . . . . . C . . . . . D
 !         . .         / .         / .         . .
 !        .   .   2   /   .   3   /   .   5   .   .

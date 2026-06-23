@@ -32,7 +32,7 @@ module fesom_pdaf
   use REcoM_GloVar, &
        only: GloPCO2surf, GloCO2flux, PAR3D
   !, Diags3D, export, PistonVelocity, alphaCO2
-  use REcoM_spectral, ONLY: tlam
+  use REcoM_spectral, ONLY: tlam, Reflec
 
 
   implicit none
@@ -56,6 +56,7 @@ module fesom_pdaf
   integer, pointer :: myList_edge2D(:)
   real, pointer :: zbar_n_srf(:)
   real, pointer :: zbar_n_bot(:)
+  integer :: nl
 
   integer :: num_tracers
   type(t_partit), pointer :: partit
@@ -108,6 +109,7 @@ contains
 
     zbar_n_srf => mesh%zbar_n_srf
     zbar_n_bot => mesh%zbar_n_bot
+    nl         =   mesh%nl
 
     num_tracers = tracers%num_tracers
 

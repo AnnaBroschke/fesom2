@@ -371,7 +371,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${YAXT_Fortran_LIBRARIES} ${YAXTC_
 # fesom.x executable
 add_executable(${PROJECT_NAME}.x ${src_home}/fesom_main.F90)
 target_link_libraries(${PROJECT_NAME}.x PUBLIC ${PROJECT_NAME})
-
+# PDAF libs 
+if(${PDAF_ACTIVE})
+   target_link_libraries(${PROJECT_NAME}.x PRIVATE $ENV{PDAF_DIR}/lib/libpdaf-d.a)
+   target_link_libraries(${PROJECT_NAME}.x PRIVATE $ENV{PDAF_DIR}/lib/libpdaf-var.a)
+endif()
 
 ### Export and installation
 

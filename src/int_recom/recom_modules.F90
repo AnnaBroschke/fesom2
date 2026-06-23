@@ -2329,6 +2329,8 @@ module REcoM_spectral
 !  Real(kind=8), allocatable, dimension(:,:,:,:)   ::  Ed4D
   integer, parameter :: iEdz=1, iEsz=2, iEuz=3, iEutop=4, iEstop=5, ed_num=5
   Real(kind=8), allocatable, dimension(:,:,:) :: Edz3D, Esz3D, Euz3D, Eutop3D, Estop3D
+
+
 contains
   !BOP
   

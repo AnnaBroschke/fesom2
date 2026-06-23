@@ -32,6 +32,7 @@ subroutine init_dim_l_pdaf(step, domain_p_all, dim_l)
        bgcmin, bgcmax, phymin, phymax
   use fesom_pdaf, &
        only: myDim_nod2D
+  USE PDAFomi, ONLY: PDAFomi_set_debug_flag
 
   implicit none
 
@@ -46,6 +47,9 @@ subroutine init_dim_l_pdaf(step, domain_p_all, dim_l)
   integer :: domain_p                       ! Local analysis domain accounting for multiple sweeps
   logical :: update_cda                     ! Whether to apply DA update
   real, allocatable :: weights_l(:)
+
+!**************Debug
+!CALL PDAFomi_set_debug_flag(1)
 
 
 ! ********************************************************
