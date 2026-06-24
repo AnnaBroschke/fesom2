@@ -32,7 +32,7 @@ subroutine collect_state_pdaf(dim_p, state_p)
        eta_n, uv, wvel, tracers, uvnode,& ! MLD1, MLD2,sigma0, &
        GloPCO2surf, GloCO2flux, PAR3D, & ! export, Diags3D, 
        a_ice ,& ! PistonVelocity, alphaCO2, 
-       Reflec, tlam
+       Edz3D, Esz3D, Euz3D, Eutop3D, tlam
 
   implicit none
   
@@ -69,6 +69,15 @@ subroutine collect_state_pdaf(dim_p, state_p)
    ! * uvnode(2,:,:)   (1, nl-1, myDim_elem2D + eDim_elem2D) ! Velocity v interpolated on nodes
    ! * a_ice          (myDim_nod2D + eDim_nod2D)            ! Sea-ice concentration
    ! ***
+!Spectral varibles
+        ! *** Dimensions of spectal varibles ***
+        ! Edz3D (nl -1 , nodesize, tlam)        ! direct
+        ! Esz3D (nl -1 , nodesize, tlam)        !difuse
+        ! Euz3D (nl -1 , nodesize, tlam)        !upwelling
+        ! Eutop3D (nl -1 , nodesize, tlam)      !upwelling top of layer
+        !**************************************
+
+
 
   ! SSH
   if (id%SSH > 0) then
@@ -181,19 +190,59 @@ subroutine collect_state_pdaf(dim_p, state_p)
            enddo
   end if
 
-!Reflectance
-!ToDo wichtig nicht klar welche dimension Reflec hat und welchen einfluss auf modell
-!write (*,*) 'FESOM-PDAF REFLEC', size(Reflec)
-!  do cnt =1, tlam
-!        write (*,*) 'FESOM-PDAF REFLEC', size(Reflec(cnt))
- !       s = sfields(id%Reflec(cnt))%off
- !       do i = 1, myDim_nod2D
- !               s = s + 1
- !               state_p(s) = Reflec(i)
- !       end do
- ! end if
- !       cnt = cnt+1
- ! end do
+
+! Direct light
+
+do cnt =1, tlam
+        if (id%Edz3D(cnt) > 0) then
+                s = sfields(id%Edz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                state_p(s) = Edz3D(k,i,cnt)
+                        end do
+                end do
+         end if
+end do
+
+!Diffuse
+do cnt =1, tlam
+        if (id%Esz3D(cnt) > 0) then
+                s = sfields(id%Esz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                state_p(s) = Esz3D(k,i,cnt)
+                        end do
+                end do
+         end if
+end do
+ 
+!upwelling
+do cnt =1, tlam
+        if (id%Euz3D(cnt) > 0) then
+                s = sfields(id%Euz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                state_p(s) = Euz3D(k,i,cnt)
+                        end do
+                end do
+         end if
+ end do
+!upwelling top of layer
+do cnt =1, tlam
+        if (id%Eutop3D(cnt) > 0) then
+                s = sfields(id%Eutop3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                state_p(s) = Eutop3D(k,i,cnt)
+                        end do
+                end do
+         end if
+end do
+
  
 ! diagnostic biogeochemical 3D fields
  if (id%PAR >0 ) then
@@ -293,6 +342,51 @@ end if
                 write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%a_ice)%variable, s, a_ice(i)
         end do
      end if
+
+     ! spectral
+     do cnt =1, tlam
+        if (id%Edz3D(cnt) > 0) then
+                s = sfields(id%Edz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Edz3D(cnt))%variable, s, Edz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+         if (id%Esz3D(cnt) > 0) then
+                s = sfields(id%Esz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Esz3D(cnt))%variable, s, Esz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+         if (id%Euz3D(cnt) > 0) then
+                s = sfields(id%Euz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Euz3D(cnt))%variable, s, Euz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+        if (id%Eutop3D(cnt) > 0) then
+                s = sfields(id%Eutop3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Eutop3D(cnt))%variable, s, Eutop3D(k, i,cnt)
+                        end do
+                end do
+         end if
+      end do
+
+
 
      ! biogeochem 2D fields
      do i = 1, myDim_nod2D 

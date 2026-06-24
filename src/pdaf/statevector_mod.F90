@@ -98,7 +98,7 @@ module statevector_pdaf
      !INTEGER :: TChl = 0       ! Total chlorophyll = PhyChl + DiaChl
      !INTEGER :: TDN = 0        ! Total dissolved N = DIN + DON
      !INTEGER :: TOC = 0        ! Total organic carbon: PhyC + DiaC + DetC + DOC + HetC
-  ! Reflectance
+  ! Spectral
      integer, allocatable  :: Edz3D (:)        ! Downwelling direct stream of light 
      integer, allocatable  :: Esz3D (:)        ! Downwelling diffuse stream of light
      integer, allocatable  :: Euz3D (:)        ! Upwelling stream of light
@@ -150,7 +150,7 @@ module statevector_pdaf
   logical :: sv_detritus = .false.
   logical :: sv_other = .false.
   logical :: sv_diagnostics = .false.
-  logical :: sv_reflectance = .false.
+  logical :: sv_spectral = .false.
 
   !---- The next variables usually do not need editing -----
 
@@ -264,9 +264,13 @@ contains
     integer :: cnt, i, l
     namelist /state_vector/ sv_physics, sv_ice, sv_carbon, sv_nutrients, &
             sv_phytoplankton, sv_zooplankton, sv_detritus, sv_other, &
-            sv_diagnostics, sv_reflectance
+            sv_diagnostics, sv_spectral
 
-#ifdef RECOM_WAVEBANDS
+#ifdef RECOM_WAVEBAND
+        allocate(id%Edz3D(tlam))
+        allocate(id%Esz3D(tlam))
+        allocate(id%Euz3D(tlam))
+        allocate(id%Eutop3D(tlam))
   !  allocate( Edz3D (nl -1,node_size,tlam))  
   !  allocate( Esz3D (nl -1,node_size,tlam))
   !  allocate( Euz3D (nl -1,node_size,tlam))
@@ -408,12 +412,7 @@ contains
                id%export = cnt
        end if
 
-       if (sv_reflectance) then
-               !allocate spectral varibles
-              allocate(id%Edz3D(tlam))
-              allocate(id%Esz3D(tlam))
-              allocate(id%Euz3D(tlam))
-              allocate(id%Eutop3D(tlam))
+       if (sv_spectral) then
 
                do l = 1, tlam
                    cnt = cnt +1
@@ -904,7 +903,7 @@ contains
                 sfields(id_var)%tridfesom = 1016
         endif
 
-! chlorophyll
+! chlorophyll diatioms
         id_var = id%DiaChl
         if (id_var > 0) then
                 sfields(id_var)%ndims = 2
@@ -1285,7 +1284,7 @@ contains
     !~ sfields(id%TOC)%bgc = .true.
 
 ! *****************************
-! *** Reflectance          ****
+! *** Spectral             ****
 ! *****************************
 
 ! Downwelling direct
@@ -1294,7 +1293,7 @@ contains
                 if (id_var > 0) then
                         sfields(id_var)%ndims = 2
                         sfields(id_var)%variable = 'Edz3D' //' '// lams(cnt)
-                        sfields(id_var)%long_name = 'Downwelling direct stream of light'
+                        sfields(id_var)%long_name = 'Downwelling direct stream of light of Waveband'//' '// lams(cnt)
                         sfields(id_var)%units = 'W * m^{-2}'
                         sfields(id_var)%updated = upd_Edz3D
                         sfields(id_var)%bgc = .true.
@@ -1307,7 +1306,7 @@ contains
                 if (id_var > 0) then
                         sfields(id_var)%ndims = 2
                         sfields(id_var)%variable = 'Esz3D' //' '// lams(cnt)
-                        sfields(id_var)%long_name = 'Downwelling diffuse stream of light'
+                        sfields(id_var)%long_name = 'Downwelling diffuse stream of light of Waveband'//' '// lams(cnt)
                         sfields(id_var)%units = 'W * m^{-2}'
                         sfields(id_var)%updated = upd_Esz3D
                         sfields(id_var)%bgc = .true.
@@ -1320,7 +1319,7 @@ contains
                 if (id_var > 0) then
                         sfields(id_var)%ndims = 2
                         sfields(id_var)%variable = 'Euz3D' //' '// lams(cnt)
-                        sfields(id_var)%long_name = 'Upwelling stream of light'
+                        sfields(id_var)%long_name = 'Upwelling stream of light of Waveband'//' '// lams(cnt)
                         sfields(id_var)%units = 'W * m^{-2}'
                         sfields(id_var)%updated = upd_Euz3D
                         sfields(id_var)%bgc = .true.
@@ -1333,7 +1332,7 @@ contains
                 if (id_var > 0) then
                         sfields(id_var)%ndims = 2
                         sfields(id_var)%variable = 'Eutop3D' //' '// lams(cnt)
-                        sfields(id_var)%long_name = 'Upwelling stream of light on the surface of each layer'
+                        sfields(id_var)%long_name = 'Upwelling stream of light on the surface of Waveband' //' '// lams(cnt)
                         sfields(id_var)%units = 'W * m^{-2}'
                         sfields(id_var)%updated = upd_Eutop3D
                         sfields(id_var)%bgc = .true.
