@@ -33,7 +33,8 @@ subroutine distribute_state_pdaf(dim_p, state_p)
        only: daynew, timenew, nlmax, mesh_fesom, topography_p, &
        mydim_nod2d, myDim_elem2D, eDim_nod2D, eDim_elem2D, &
       eta_n, uv, wvel, tracers, uvnode, a_ice, &
-      partit, exchange_nod, exchange_elem, dynamics
+      partit, exchange_nod, exchange_elem, dynamics, &
+      Edz3D, Esz3D, Euz3D, Eutop3D, tlam
 
   implicit none
   
@@ -42,7 +43,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
   real, intent(inout) :: state_p(dim_p)  !< PE-local state vector
 
 ! *** Local variables ***
-  integer :: i, k, b, s, istate, ifesom  ! Counters
+  integer :: i, k, b, s, istate, ifesom, cnt  ! Counters
   integer :: node                        ! Node index
   real, allocatable :: U_node_upd(:,:,:) ! Velocity update on nodes
   real, allocatable :: U_elem_upd(:,:,:) ! Velocity update on elements
@@ -105,6 +106,44 @@ subroutine distribute_state_pdaf(dim_p, state_p)
                 eta_n(i) = state_p(i + sfields(id%SSH)%off)
         end do
      end if
+
+     ! Direct light
+
+do cnt =1, tlam
+        if (id%Edz3D(cnt) > 0) then
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                Edz3D(k,i,cnt) = state_p(sfields(id%Edz3D(cnt))%off)
+                        end do
+                end do
+         end if
+!Diffuse
+        if (id%Esz3D(cnt) > 0) then
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                Esz3D(k,i,cnt) = state_p( sfields(id%Esz3D(cnt))%off)
+                        end do
+                end do
+         end if
+
+!upwelling
+        if (id%Euz3D(cnt) > 0) then
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                Euz3D(k,i,cnt) = state_p( sfields(id%Euz3D(cnt))%off)
+                        end do
+                end do
+         end if
+!upwelling top of layer
+        if (id%Eutop3D(cnt) > 0) then
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                Eutop3D(k,i,cnt) = state_p( sfields(id%Eutop3D(cnt))%off)
+                        end do
+                end do
+         end if
+end do
+
 
      ! u (2) and v (3) velocities
      if (id%u > 0 .and. id%v > 0) then
@@ -223,6 +262,50 @@ subroutine distribute_state_pdaf(dim_p, state_p)
                         end do
                 end do
          end if
+
+         ! spectral
+     do cnt =1, tlam
+        if (id%Edz3D(cnt) > 0) then
+                s = sfields(id%Edz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Edz3D(cnt))%variable, s, Edz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+         if (id%Esz3D(cnt) > 0) then
+                s = sfields(id%Esz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Esz3D(cnt))%variable, s, Esz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+         if (id%Euz3D(cnt) > 0) then
+                s = sfields(id%Euz3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Euz3D(cnt))%variable, s, Euz3D(k, i,cnt)
+                        end do
+                end do
+         end if
+
+        if (id%Eutop3D(cnt) > 0) then
+                s = sfields(id%Eutop3D(cnt))%off
+                do i = 1, myDim_nod2D
+                        do k = 1, nlmax
+                                s = s+1
+                                write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%Eutop3D(cnt))%variable, s, Eutop3D(k, i,cnt)
+                        end do
+                end do
+         end if
+      end do
+
 
         close(fileID_debug)
 
