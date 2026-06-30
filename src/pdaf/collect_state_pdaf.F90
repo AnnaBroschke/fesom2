@@ -203,10 +203,7 @@ do cnt =1, tlam
                         end do
                 end do
          end if
-end do
-
 !Diffuse
-do cnt =1, tlam
         if (id%Esz3D(cnt) > 0) then
                 s = sfields(id%Esz3D(cnt))%off
                 do i = 1, myDim_nod2D
@@ -216,10 +213,8 @@ do cnt =1, tlam
                         end do
                 end do
          end if
-end do
  
 !upwelling
-do cnt =1, tlam
         if (id%Euz3D(cnt) > 0) then
                 s = sfields(id%Euz3D(cnt))%off
                 do i = 1, myDim_nod2D
@@ -229,9 +224,7 @@ do cnt =1, tlam
                         end do
                 end do
          end if
- end do
 !upwelling top of layer
-do cnt =1, tlam
         if (id%Eutop3D(cnt) > 0) then
                 s = sfields(id%Eutop3D(cnt))%off
                 do i = 1, myDim_nod2D
