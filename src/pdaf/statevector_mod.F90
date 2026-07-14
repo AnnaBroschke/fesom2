@@ -253,8 +253,9 @@ contains
 !> This routine initializes the array `id`
 !!
   subroutine init_id(nfields)
-
+#if defined(__RECOM_WAVEBANDS)
     use fesom_pdaf, only: tlam
+#endif 
     use assim_pdaf_mod, &
          only: nmlfile
     implicit none
@@ -306,18 +307,18 @@ contains
      if (sv_carbon) then
              cnt = cnt +1
              id%DIC    = cnt ! dissolved tracers
-             cnt = cnt +1
-             id%DOC    = cnt
+             !cnt = cnt +1
+             !id%DOC    = cnt
              cnt = cnt +1
              id%Alk    = cnt
-             cnt = cnt +1
-             id%pCO2s = cnt ! surface carbon diags
-             cnt = cnt +1
-             id%CO2f   = cnt
-             cnt = cnt +1
-             id%alphaCO2  = cnt
-             cnt = cnt +1
-             id%PistonVel = cnt
+             !cnt = cnt +1
+             !id%pCO2s = cnt ! surface carbon diags
+             !cnt = cnt +1
+             !id%CO2f   = cnt
+             !cnt = cnt +1
+             !id%alphaCO2  = cnt
+             !cnt = cnt +1
+             !id%PistonVel = cnt
       end if
 
       if (sv_nutrients) then
@@ -393,14 +394,14 @@ contains
        end if
 
        if (sv_other) then 
-               cnt = cnt +1
-               id%DON    = cnt
+              ! cnt = cnt +1
+               !id%DON    = cnt
                cnt = cnt +1
                id%O2     = cnt
-               cnt = cnt +1
-               id%PAR    = cnt
-               cnt = cnt +1
-               id%sigma  = cnt
+               !cnt = cnt +1
+               !id%PAR    = cnt
+               !cnt = cnt +1
+               !id%sigma  = cnt
        end if
 
        if (sv_diagnostics) then
@@ -411,7 +412,7 @@ contains
                cnt = cnt +1
                id%export = cnt
        end if
-
+#if defined(__RECOM_WAVEBANDS)
        if (sv_spectral) then
 
                do l = 1, tlam
@@ -432,7 +433,7 @@ contains
                end do
        end if
 
-
+#endif 
 
 ! Total number of fields
     nfields = cnt
@@ -469,19 +470,24 @@ contains
   subroutine init_sfields()
 
     use fesom_pdaf, &
-         only: myDim_nod2D, nlmax, tlam
+         only: myDim_nod2D, nlmax
     use assim_pdaf_mod, &
          only: nmlfile
     use parallel_pdaf_mod, &
          only: mype_world
+#if defined(__RECOM_WAVEBANDS)
+  use fesom_pdaf,&
+        only: tlam
+#endif
 
     implicit none
 
 ! *** Local variables ***
     integer :: i, cnt           ! Counter
     integer :: id_var           ! varible for id number of varible which fills sfields 
+#if defined(__RECOM_WAVEBANDS)
     character(len=10), dimension(tlam) :: lams  !hard coded for wavelength names in spectral varibles
-
+#endif
     ! logical varibles if varible should be updated defined in namelist
     logical :: upd_ssh = .false. 
     logical :: upd_u  = .false.
@@ -568,9 +574,10 @@ contains
     read  (20,NML=updated)
     close (20)
 
+#if defined(__RECOM_WAVEBANDS)
 ! *** Define spectral bands for naming sfields correctly ***
      lams = [character(len=10) :: "400","425","450","475","500","525","550","575","600","625","650","675","700"]
-
+#endif
 
 ! ****************
 ! *** Physics ****
@@ -1286,7 +1293,7 @@ contains
 ! *****************************
 ! *** Spectral             ****
 ! *****************************
-
+#ifdef RECOM_WAVEBAND
 ! Downwelling direct
         do cnt = 1, tlam
                 id_var = id%Edz3D(cnt)
@@ -1338,6 +1345,7 @@ contains
                         sfields(id_var)%bgc = .true.
                endif
         end do
+#endif
 ! **************************************
 ! ***   Set dimensions and offsets   ***
 ! **************************************

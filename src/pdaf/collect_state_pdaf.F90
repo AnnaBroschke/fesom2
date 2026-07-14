@@ -31,8 +31,12 @@ subroutine collect_state_pdaf(dim_p, state_p)
        only: nlmax, daynew, timenew, mydim_nod2d, &
        eta_n, uv, wvel, tracers, uvnode,& ! MLD1, MLD2,sigma0, &
        GloPCO2surf, GloCO2flux, PAR3D, & ! export, Diags3D, 
-       a_ice ,& ! PistonVelocity, alphaCO2, 
-       Edz3D, Esz3D, Euz3D, Eutop3D, tlam
+       a_ice  ! PistonVelocity, alphaCO2, 
+#if defined(__RECOM_WAVEBANDS)
+  use fesom_pdaf, &
+      only: Edz3D, Esz3D, Euz3D, Eutop3D, tlam
+#endif
+
 
   implicit none
   
@@ -191,8 +195,9 @@ subroutine collect_state_pdaf(dim_p, state_p)
   end if
 
 
-! Direct light
 
+! Direct light
+#ifdef RECOM_WAVEBAND
 do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
                 s = sfields(id%Edz3D(cnt))%off
@@ -202,6 +207,9 @@ do cnt =1, tlam
                                 state_p(s) = Edz3D(k,i,cnt)
                         end do
                 end do
+         end if
+         if (mype_world ==0) then
+                                        WRITE(*,*) "debug collect", Edz3D(1:3,1:3,cnt)
          end if
 !Diffuse
         if (id%Esz3D(cnt) > 0) then
@@ -235,7 +243,7 @@ do cnt =1, tlam
                 end do
          end if
 end do
-
+#endif
  
 ! diagnostic biogeochemical 3D fields
  if (id%PAR >0 ) then
@@ -335,7 +343,7 @@ end if
                 write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%a_ice)%variable, s, a_ice(i)
         end do
      end if
-
+#ifdef RECOM_WAVEBAND
      ! spectral
      do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
@@ -378,8 +386,7 @@ end if
                 end do
          end if
       end do
-
-
+#endif
 
      ! biogeochem 2D fields
      do i = 1, myDim_nod2D 

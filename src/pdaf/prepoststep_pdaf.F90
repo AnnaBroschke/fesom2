@@ -199,13 +199,16 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   ! Allocate fields
   allocate(ens_stddev(nfields))
 
+
   ! Compute ensemble deviation and mean separately
   ! for each field in the state vector
   do i = 1, nfields
      ! Start and end index
      istart = 1 + sfields(i)%off
      iend = sfields(i)%dim + sfields(i)%off
-
+        if (mype_world ==0) then
+        WRITE(*,*) "debug spectral name", trim(sfields(i)%variable), state_p(istart:istart+2)
+        end if
      call PDAF_diag_stddev(sfields(i)%dim, dim_ens, &
           state_p(istart:iend), ens_p(istart:iend,:), &
           ens_stddev(i), 1, COMM_filter, pdaf_status)

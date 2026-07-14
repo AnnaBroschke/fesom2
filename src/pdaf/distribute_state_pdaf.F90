@@ -33,8 +33,11 @@ subroutine distribute_state_pdaf(dim_p, state_p)
        only: daynew, timenew, nlmax, mesh_fesom, topography_p, &
        mydim_nod2d, myDim_elem2D, eDim_nod2D, eDim_elem2D, &
       eta_n, uv, wvel, tracers, uvnode, a_ice, &
-      partit, exchange_nod, exchange_elem, dynamics, &
-      Edz3D, Esz3D, Euz3D, Eutop3D, tlam
+      partit, exchange_nod, exchange_elem, dynamics
+#if defined(__RECOM_WAVEBANDS)
+  use fesom_pdaf, & 
+      only: Edz3D, Esz3D, Euz3D, Eutop3D, tlam
+#endif
 
   implicit none
   
@@ -108,7 +111,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
      end if
 
      ! Direct light
-
+#ifdef RECOM_WAVEBAND
 do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
                 do i = 1, myDim_nod2D
@@ -143,7 +146,7 @@ do cnt =1, tlam
                 end do
          end if
 end do
-
+#endif
 
      ! u (2) and v (3) velocities
      if (id%u > 0 .and. id%v > 0) then
@@ -262,7 +265,7 @@ end do
                         end do
                 end do
          end if
-
+#ifdef RECOM_WAVEBAND
          ! spectral
      do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
@@ -306,7 +309,7 @@ end do
          end if
       end do
 
-
+#endif
         close(fileID_debug)
 
      end if writedebug

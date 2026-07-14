@@ -102,7 +102,7 @@ subroutine init_ens_pdaf(filtertype, dim_p, dim_ens, state_p, Uinv, &
   character(len=5)   :: tim_string
   
   ! Set debug output
-  debugmode    = .false.
+  debugmode    = .true.
   write_debug = .false.
   if (debugmode .and. mype_world==0) write_debug = .true.
   
@@ -327,6 +327,7 @@ subroutine init_ens_pdaf(filtertype, dim_p, dim_ens, state_p, Uinv, &
 
         allocate(ens_p_per(dim_p_cov,dim_ens))
         ens_p_per   = 0.0
+
 
         if (dim_ens>1) then
 

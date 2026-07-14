@@ -32,16 +32,12 @@ module fesom_pdaf
   use REcoM_GloVar, &
        only: GloPCO2surf, GloCO2flux, PAR3D
   !, Diags3D, export, PistonVelocity, alphaCO2
-  use REcoM_spectral, ONLY: tlam, Reflec
-!!! insert Edz3D, Esz3D, Euz3D, Eutop3D
-
+#if defined(__RECOM_WAVEBANDS)
+  use REcoM_spectral, ONLY: tlam , &
+      Edz3D, Esz3D, Euz3D, Eutop3D
+#endif
   implicit none
 
-!!!!!dummy spectral code not incliuded
-  real,allocatable :: Edz3D(:,:,:)
-  real,allocatable :: Esz3D(:,:,:)
-  real,allocatable :: Euz3D(:,:,:)
-  real,allocatable :: Eutop3D(:,:,:)
 
   ! Additional variables related to FESOM mesh
   type(t_mesh), pointer, save :: mesh_fesom
