@@ -22,6 +22,7 @@ subroutine read_config_pdaf()
        step_null, path_init, file_init, file_inistate, read_inistate, &
        twin_experiment, dim_obs_max, use_global_obs, DAoutput_path, &
        this_is_pdaf_restart, start_from_ENS_spinup, days_since_DAstart, &
+       no_pertubation_ens, &
        ! initial ensemble perturbation
        varscale, perturb_ssh, perturb_u, &
        perturb_v, perturb_temp, perturb_salt, &
@@ -133,6 +134,7 @@ subroutine read_config_pdaf()
        step_null, days_since_DAstart, &
        file_inistate, read_inistate, &
        this_is_pdaf_restart, start_from_ENS_spinup, &
+       no_pertubation_ens, &
        perturb_ssh, perturb_u, &
        perturb_v, perturb_temp, perturb_salt, &
        perturb_DIC, perturb_Alk, perturb_DIN, perturb_O2
@@ -376,6 +378,7 @@ subroutine read_config_pdaf()
      write (*,'(a,5x,a20,1x,1x,a)')     'FESOM-PDAF',   'file_init   ',         trim(file_init)
      write (*,'(a,5x,a20,1x,1x,l)')     'FESOM-PDAF',   'this_is_pdaf_restart', this_is_pdaf_restart
      write (*,'(a,5x,a20,1x,1x,l)')     'FESOM-PDAF',   'start_from_ENS_spinup',start_from_ENS_spinup
+     write (*,'(a,5x,a20,1x,1x,l)')     'FESOM-PDAF',   'no_pertubation_ens',   no_pertubation_ens
      write (*,'(a,5x,a20,1x,es10.2)')'FESOM-PDAF',   'varscale    ', varscale
      write (*,'(a,5x,a20,1x,l)')     'FESOM-PDAF',   'perturb_ssh',  perturb_ssh
      write (*,'(a,5x,a20,1x,l)')     'FESOM-PDAF',   'perturb_u',    perturb_u

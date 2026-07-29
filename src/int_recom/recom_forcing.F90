@@ -179,7 +179,7 @@ subroutine REcoM_Forcing(zNodes, n, Nn, state, SurfSW, Loc_slp, Temp, Sali, Sali
     Real(kind=8),dimension(mesh%nl-1)          :: bbpart_kave
     Real(kind=8),dimension(mesh%nl-1)          :: bbctot_ave
     Real(kind=8),dimension(tlam)               :: Eupwel
-    !Real(kind=8),dimension(tlam)               :: Reflec        !R_0(lamda) Reflectance below surface
+    Real(kind=8),dimension(tlam)               :: Reflec        !R_0(lamda) Reflectance below surface
 !  iops surface     
     Real(kind=8),dimension(tlam)        :: bt_ksur
     Real(kind=8),dimension(tlam)        :: bpart_ksur

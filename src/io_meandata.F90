@@ -1129,20 +1129,68 @@ CASE ('otracers  ')
          call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'idetz2calc', 'idetz2calc', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
          endif
 
+      ! =====================================================================
+      ! Tracer ID 1029:
+      ! - In COCCOS-ONLY config with rivers: DOCt (Terrestrial DOC)
+      ! - In 3ZOO2DET-ONLY config: Zoo3N (Microzooplankton Nitrogen)
+      ! - In FULL model config: CoccoN (Coccolithophore Nitrogen)
+      ! =====================================================================
       else if (tracers%data(j)%ID==1029) then
-         if (use_REcoM) then
-         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoN', 'CoccoN', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         if (use_REcoM .and. enable_coccos .and. enable_3zoo2det) then
+         ! Full model: This is Coccolithophore Nitrogen
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoN', 'Coccolithophore Nitrogen', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         else if (use_REcoM .and. enable_3zoo2det .and. .not. enable_coccos) then
+         ! 3zoo2det-only configuration: This is Microzooplankton Nitrogen
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'Zoo3N', 'Microzooplankton Nitrogen', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         else if (use_REcoM .and. enable_coccos .and. .not. enable_3zoo2det .and. useRivers) then
+         ! Coccos-only configuration with rivers: This is Terrestrial DOC
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'DOCt', 'Terrestrial Dissolved Organic Carbon', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
          endif
+         
+      !else if (tracers%data(j)%ID==1029) then
+      !   if (use_REcoM) then
+      !   call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoN', 'CoccoN', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+      !   endif
 
+      ! =====================================================================
+      ! Tracer ID 1030:
+      ! - In 3ZOO2DET-ONLY config: Zoo3C (Microzooplankton Carbon)
+      ! - In FULL model config: CoccoC (Coccolithophore Carbon)
+      ! =====================================================================
       else if (tracers%data(j)%ID==1030) then
-         if (use_REcoM) then
-         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoC', 'CoccoC', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         if (use_REcoM .and. enable_coccos .and. enable_3zoo2det) then
+         ! Full model: This is Coccolithophore Carbon
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoC', 'Coccolithophore Carbon', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         else if (use_REcoM .and. enable_3zoo2det .and. .not. enable_coccos) then
+         ! 3zoo2det-only configuration: This is Microzooplankton Carbon
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'Zoo3C', 'Microzooplankton Carbon', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
          endif
 
+
+      !else if (tracers%data(j)%ID==1030) then
+      !   if (use_REcoM) then
+      !   call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoC', 'CoccoC', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+      !   endif
+
+      ! =====================================================================
+      ! Tracer ID 1031:
+      ! - In 3ZOO2DET-ONLY config with rivers: DOCt (Terrestrial DOC)
+      ! - In FULL model config: CoccoChl (Coccolithophore Chlorophyll)
+      ! =====================================================================
       else if (tracers%data(j)%ID==1031) then
-         if (use_REcoM) then
-         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoChl', 'CoccoChl', '[mg/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         if (use_REcoM .and. enable_coccos .and. enable_3zoo2det) then
+         ! Full model: This is Coccolithophore Chlorophyll
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoChl', 'Coccolithophore Chlorophyll', '[mg/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+         else if (use_REcoM .and. enable_3zoo2det .and. .not. enable_coccos .and. useRivers) then
+         ! 3zoo2det-only configuration with rivers: This is Terrestrial DOC
+         call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'DOCt', 'Terrestrial Dissolved Organic Carbon', '[mmol/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
          endif
+
+
+      !else if (tracers%data(j)%ID==1031) then
+      !   if (use_REcoM) then
+      !   call def_stream((/nl-1, nod2D/),  (/nl-1, myDim_nod2D/),  'CoccoChl', 'CoccoChl', '[mg/m3]', tracers%data(j)%values(:,:), io_list(i)%freq, io_list(i)%unit, io_list(i)%precision, partit, mesh)
+      !   endif
 
       else if (tracers%data(j)%ID==1032) then
          if (use_REcoM) then

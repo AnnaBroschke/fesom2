@@ -90,7 +90,7 @@ module assim_pdaf_mod
   logical :: start_from_ENS_spinup = .false.  ! init_ens_pdaf:    - at start from perturbed ensemble, skip perturbation of initial fields
                                               ! add_atmos_ens_st: - at start from perturbed ensemble, read perturbed atmospheric state
                                               ! distribute_state: - at start from perturbed ensemble, skip distribution of initial fields
-
+  logical :: no_pertubation_ens = .false.     !init_ens_pdaf.     - skip permutation
 
 
   ! Other variables - NOT available as command line options / in the namelist:

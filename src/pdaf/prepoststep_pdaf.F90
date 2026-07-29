@@ -194,36 +194,36 @@ subroutine prepoststep_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! *** (=RMS errors according to sampled covar matrix)      ***
 ! ************************************************************
 
-  if (mype_filter==0) write (*,'(a, 8x,a)') 'FESOM-PDAF', '--- compute ensemble mean and standard deviations'
+  if (dim_ens > 1) then
+        if (mype_filter==0) write (*,'(a, 8x,a)') 'FESOM-PDAF', '--- compute ensemble mean and standard deviations'
 
-  ! Allocate fields
-  allocate(ens_stddev(nfields))
+        ! Allocate fields
+        allocate(ens_stddev(nfields))
 
 
-  ! Compute ensemble deviation and mean separately
-  ! for each field in the state vector
-  do i = 1, nfields
-     ! Start and end index
-     istart = 1 + sfields(i)%off
-     iend = sfields(i)%dim + sfields(i)%off
-        if (mype_world ==0) then
-        WRITE(*,*) "debug spectral name", trim(sfields(i)%variable), state_p(istart:istart+2)
+        ! Compute ensemble deviation and mean separately
+        ! for each field in the state vector
+        do i = 1, nfields
+                ! Start and end index
+                istart = 1 + sfields(i)%off
+                iend = sfields(i)%dim + sfields(i)%off
+
+                call PDAF_diag_stddev(sfields(i)%dim, dim_ens, &
+                        state_p(istart:iend), ens_p(istart:iend,:), &
+                        ens_stddev(i), 1, COMM_filter, pdaf_status)
+        end do
+
+        ! Output ensemble standard deviations
+        if (mype_world == 0) then
+                write (*, '(a,6x,a)') 'FESOM-PDAF', 'Ensemble standard deviation (estimated RMS error)'
+                do i = 1, nfields
+                        write (*,'(a,4x,a10,4x,a10,2x,es12.4)') &
+                        'FEOSM-PDAF', 'STDDEV-'//forana, trim(sfields(i)%variable), ens_stddev(i)
+                end do
         end if
-     call PDAF_diag_stddev(sfields(i)%dim, dim_ens, &
-          state_p(istart:iend), ens_p(istart:iend,:), &
-          ens_stddev(i), 1, COMM_filter, pdaf_status)
-  end do
+        deallocate(ens_stddev)
 
-  ! Output ensemble standard deviations
-  if (mype_world == 0) then
-     write (*, '(a,6x,a)') 'FESOM-PDAF', 'Ensemble standard deviation (estimated RMS error)'
-     do i = 1, nfields
-        write (*,'(a,4x,a10,4x,a10,2x,es12.4)') &
-             'FEOSM-PDAF', 'STDDEV-'//forana, trim(sfields(i)%variable), ens_stddev(i)
-     end do
-  end if
-  deallocate(ens_stddev)
-
+ end if
 
 ! *********************************************************************
 ! *** Store ensemble mean values for observation exclusion criteria ***

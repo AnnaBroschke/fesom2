@@ -581,7 +581,6 @@ contains
 !        allocate(recom_det2_tracer_id(4))
         recom_det2_tracer_id = (/1025, 1026, 1027, 1028/)        
 #if defined(__RECOM_WAVEBANDS)         
-dummer text
 !SL to be further extend for if cases
         if (RECOM_CDOM) then
            icdom = 37 

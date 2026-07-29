@@ -248,9 +248,7 @@ subroutine init_pdaf(nsteps, mesh)
 ! ***************************
 ! *** Define state vector ***
 ! ***************************
-
   call setup_statevector(dim_state, dim_state_p, screen)
-
   ! Set land mask and compute volumes
   call init_topography(dim_state_p, dim_state)
 

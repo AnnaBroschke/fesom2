@@ -195,9 +195,8 @@ subroutine collect_state_pdaf(dim_p, state_p)
   end if
 
 
-
 ! Direct light
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
 do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
                 s = sfields(id%Edz3D(cnt))%off
@@ -208,9 +207,7 @@ do cnt =1, tlam
                         end do
                 end do
          end if
-         if (mype_world ==0) then
-                                        WRITE(*,*) "debug collect", Edz3D(1:3,1:3,cnt)
-         end if
+        ! if (mype_world ==0)  WRITE(*,*) "debug collect", Edz3D(1:3,1:3,cnt)
 !Diffuse
         if (id%Esz3D(cnt) > 0) then
                 s = sfields(id%Esz3D(cnt))%off
@@ -343,7 +340,7 @@ end if
                 write(fileID_debug, '(a10,1x,i8,1x,G15.6)') sfields(id%a_ice)%variable, s, a_ice(i)
         end do
      end if
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
      ! spectral
      do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then

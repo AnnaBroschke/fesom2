@@ -199,16 +199,17 @@ contains
 ! ***********************************
 ! *** Initialize the state vector ***
 ! ***********************************
-
+if (mype==0)  WRITE(*,*) 'start setupt statevector'
 ! *** Initialize array `id` ***
 
     call init_id(nfields)
-
+if (mype==0)  WRITE(*,*) 'after init_id of nfields'
 ! *** Initialize array `sfields` ***
-
     call init_sfields()
-    call set_field_types(screen)
+    if (mype==0)  WRITE(*,*) 'after init_sfields'
 
+    call set_field_types(screen)
+    if (mype==0)  WRITE(*,*) 'after set_fields types'
 ! *** Set state vector dimension ***
 
     dim_state_p = sum(sfields(:)%dim)
@@ -267,7 +268,7 @@ contains
             sv_phytoplankton, sv_zooplankton, sv_detritus, sv_other, &
             sv_diagnostics, sv_spectral
 
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
         allocate(id%Edz3D(tlam))
         allocate(id%Esz3D(tlam))
         allocate(id%Euz3D(tlam))
@@ -1293,7 +1294,7 @@ contains
 ! *****************************
 ! *** Spectral             ****
 ! *****************************
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
 ! Downwelling direct
         do cnt = 1, tlam
                 id_var = id%Edz3D(cnt)

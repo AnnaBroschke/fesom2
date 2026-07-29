@@ -12,7 +12,7 @@ subroutine init_ens_pdaf(filtertype, dim_p, dim_ens, state_p, Uinv, &
        only: PDAF_seik_omega, PDAF_sampleens
   use assim_pdaf_mod, &
        only: file_init, path_init, read_inistate, file_inistate, varscale, &
-       this_is_pdaf_restart, start_from_ENS_spinup, &
+       this_is_pdaf_restart, start_from_ENS_spinup, no_pertubation_ens, &
        perturb_ssh, perturb_u, &
        perturb_v, perturb_temp, perturb_salt, &
        perturb_DIC, perturb_Alk, perturb_DIN, perturb_O2, &
@@ -133,6 +133,13 @@ subroutine init_ens_pdaf(filtertype, dim_p, dim_ens, state_p, Uinv, &
      ens_p   = ens_p_init
      state_p = sum(ens_p, dim=2) / real(dim_ens)
 
+  elseif (no_pertubation_ens) then 
+
+     if (mype_filter == 0)  write(*,'(a,2x,a)') 'FESOM-PDAF','This has no pertubation, skipping init_ens_pdaf'
+     
+     do col = 1, dim_ens
+      ens_p(:,col) = state_p(:)
+     end do
   else type_init
 
      ! ************************************************

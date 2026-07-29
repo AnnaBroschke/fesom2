@@ -110,8 +110,7 @@ subroutine distribute_state_pdaf(dim_p, state_p)
         end do
      end if
 
-     ! Direct light
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
 do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
                 do i = 1, myDim_nod2D
@@ -265,7 +264,7 @@ end do
                         end do
                 end do
          end if
-#ifdef RECOM_WAVEBAND
+#ifdef __RECOM_WAVEBANDS
          ! spectral
      do cnt =1, tlam
         if (id%Edz3D(cnt) > 0) then
