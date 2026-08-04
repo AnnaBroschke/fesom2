@@ -261,7 +261,7 @@ INTEGER, INTENT(in)    :: istep          ! FESOM's istep (0 at each restart; fir
 
 ! Local variables:
 INTEGER :: row, col                      ! counters
-REAL :: fac                              ! Square-root of dim_ens or dim_ens-1
+REAL(8) :: fac                              ! Square-root of dim_ens or dim_ens-1
 REAL :: arc, varscale                    ! autoregression coefficient and scaling factor
 CHARACTER(len=3) :: istep_string
 integer :: verbose = 0                   ! 1 to let PDAF_seik_omega write to screen; 0 for no output
@@ -320,7 +320,7 @@ fac = varscale * SQRT(REAL(dim_ens-1)) ! varscale: scaling factor for ensemble v
 !    ____           =====   _______    ____
 !    pert = fac * ( eof_p * omega_v) + null
 
-CALL DGEMV('n', nfields*myDim_nod2D, dim_ens-1, fac, eof_p, nfields*myDim_nod2D, omega_v, 1, 0, perturbation, 1) ! dgemv: matrix-vector multiplication
+CALL DGEMV('n', nfields*myDim_nod2D, dim_ens-1, fac, eof_p, nfields*myDim_nod2D, omega_v, 1, 0.0d0, perturbation, 1) ! dgemv: matrix-vector multiplication
 
 IF (istep==1) THEN
 
@@ -1079,6 +1079,54 @@ END SUBROUTINE
 SUBROUTINE compute_ipsr()
 
 USE fesom_pdaf, &
+   ONLY: mesh_fesom, myDim_nod2D,eDim_nod2D, &
+   timenew, daynew, pi
+USE parallel_pdaf_mod, &
+   ONLY: filterpe, COMM_couple
+USE mod_atmos_ens_stochasticity
+
+IMPLICIT NONE
+
+REAL, ALLOCATABLE :: phi(:)   ! latitude (radians)
+REAL, ALLOCATABLE :: delta(:) ! solar declination (radians)
+REAL, ALLOCATABLE :: H(:)     ! hour angle from solar noon (radians)
+INTEGER :: i                  ! counter
+
+IF (filterpe) THEN
+
+   ! filter-pe ensemble member (0) deals with computations
+   allocate(phi(myDim_nod2D+eDim_nod2D),delta(myDim_nod2D+eDim_nod2D),H(myDim_nod2D+eDim_nod2D))
+
+   ! latitude (radians)
+   phi = mesh_fesom%geo_coord_nod2D(2,1:myDim_nod2D+eDim_nod2D)
+
+   ! solar declination (radians)
+   delta = -23.45/180.0*pi * COS(2.0*pi* (daynew+10.0)/365.25)
+
+   ! hour angle from solar noon (radians; positive = west)
+   H = -timenew/24.0/60.0/60.0*2.0*pi+pi - mesh_fesom%geo_coord_nod2D(1,1:myDim_nod2D+eDim_nod2D)
+
+   ! instantaneous potential solar radiation
+   ipsr = COS(phi)*COS(H)*COS(delta) + SIN(phi)*SIN(delta)
+   DO i = 1, myDim_nod2D+eDim_nod2D
+      ipsr(i) = max(ipsr(i),0.0)
+   ENDDO
+
+   ! clean up:
+        deallocate(phi,delta,H)
+
+ENDIF
+
+! broadcasting from filter-pe (0) to all ensemble members
+CALL MPI_Bcast(ipsr, myDim_nod2D+eDim_nod2D, MPI_DOUBLE_PRECISION, 0, &
+   COMM_couple, MPIerr)
+
+END SUBROUTINE
+
+
+SUBROUTINE compute_ipsr_new()
+
+USE fesom_pdaf, &
    ONLY: mesh_fesom,&
          myDim_nod2D,eDim_nod2D, &
          pi, daynew, &
@@ -1109,7 +1157,8 @@ IF (filterpe) THEN
             delta(myDim_nod2D+eDim_nod2D), &
             H(myDim_nod2D+eDim_nod2D), &
             glon(myDim_nod2D+eDim_nod2D), &
-            glat(myDim_nod2D+eDim_nod2D))
+            glat(myDim_nod2D+eDim_nod2D), &
+            psr(myDim_nod2D+eDim_nod2D))
    
    ! get geographic coordinates from rotated mesh
    DO i = 1, myDim_nod2D+eDim_nod2D
@@ -1125,7 +1174,7 @@ IF (filterpe) THEN
    ! hour angle from solar noon (radians; positive = west)
    H = -timenew/24.0/60.0/60.0*2.0*pi+pi - glon
 
-   ! instantaneous potential solar radiation
+  ! instantaneous potential solar radiation
    ipsr = COS(phi)*COS(H)*COS(delta) + SIN(phi)*SIN(delta)
    ! potential solar radiation at solar noon
    psr  = COS(phi-delta)
@@ -1138,7 +1187,7 @@ IF (filterpe) THEN
    ENDDO
 
    ! clean up:
-   deallocate(phi,delta,H,glon,glat)
+   deallocate(phi,delta,H,glon,glat,psr)
 
 ENDIF
 

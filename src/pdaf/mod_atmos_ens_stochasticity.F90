@@ -44,7 +44,7 @@ MODULE mod_atmos_ens_stochasticity
   CHARACTER(len=110)      :: filename                ! Name of covariance netCDF file
   INTEGER,          save  :: nfields_cvrfile         ! Number of atmospheric forcing fields in covariance netCDF file
   INTEGER,          save  :: nfields                 ! Number of activated atmospheric forcing fields
-  REAL,ALLOCATABLE        :: perturbation(:)         ! Vector containing perturbation field for local ensemble member
+  REAL(8),ALLOCATABLE        :: perturbation(:)         ! Vector containing perturbation field for local ensemble member
   character(len=150) :: path_atm_cov
   
   REAL,ALLOCATABLE, save  :: perturbation_humi (:)   ! Final perturbations for each variable
@@ -110,5 +110,13 @@ LOGICAL :: write_atmos_st = .false. ! wether to protocol the perturbed atmospher
 
 REAL :: stable_rmse = 0 ! (ocean temperature) ensemble spread after 16 months of assimilation 
 
-
+INTERFACE
+   SUBROUTINE DGEMV(TRANS, M, N, ALPHA, A, LDA, X, INCX, BETA, Y, INCY)
+     CHARACTER(len=1), INTENT(IN) :: TRANS
+     INTEGER,          INTENT(IN) :: M, N, LDA, INCX, INCY
+     REAL(8),          INTENT(IN) :: ALPHA, BETA
+     REAL(8),          INTENT(IN) :: A(LDA,*), X(*)
+     REAL(8),          INTENT(INOUT) :: Y(*)
+   END SUBROUTINE DGEMV
+END INTERFACE
 END MODULE mod_atmos_ens_stochasticity

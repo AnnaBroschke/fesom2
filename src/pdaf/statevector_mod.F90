@@ -273,6 +273,13 @@ if (mype==0)  WRITE(*,*) 'after init_id of nfields'
         allocate(id%Esz3D(tlam))
         allocate(id%Euz3D(tlam))
         allocate(id%Eutop3D(tlam))
+
+        do l = 1, tlam
+            id%Edz3D(l) = 0
+            id%Esz3D(l) = 0
+            id%Euz3D(l) = 0
+            id%Eutop3D(l) = 0
+        end do
   !  allocate( Edz3D (nl -1,node_size,tlam))  
   !  allocate( Esz3D (nl -1,node_size,tlam))
   !  allocate( Euz3D (nl -1,node_size,tlam))
