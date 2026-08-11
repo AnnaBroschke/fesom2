@@ -738,7 +738,14 @@ fname_atm = TRIM(DAoutput_path)//'/atmos/atmos_'//mype_string//'_'//cyearnew//'.
 
 s=1
 stat(s) = NF_OPEN(TRIM(fname_atm), NF_WRITE, fileid)
-IF (stat(s) /= NF_NOERR) STOP 'error opening atmospheric stochasticity netCDF'
+!IF (stat(s) /= NF_NOERR) STOP 'error opening atmospheric stochasticity netCDF'
+
+IF (stat(s) /= NF_NOERR) THEN
+    WRITE(*,*) 'ERROR opening PDAF restart'
+    WRITE(*,*) 'file = ', s
+    WRITE(*,*) 'stat = ', stat
+    STOP
+END IF
 
 ! ----- inquire variable IDs:
 

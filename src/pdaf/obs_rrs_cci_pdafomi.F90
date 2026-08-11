@@ -46,7 +46,7 @@
 !! * 2019-06 - Lars Nerger - Initial code
 !! * Later revisions - see repository log
 !!
-module obs_chl_cci_pdafomi
+module obs_rrs_cci_pdafomi
 
   use parallel_pdaf_mod, &
        only: mype_filter, writepe
@@ -56,38 +56,55 @@ module obs_chl_cci_pdafomi
        only: n_sweeps 
   use assim_pdaf_mod, &
        only: obs_PP
+  use fesom_pdaf, &
+	   only: tlam
 
   implicit none
   save
 
   ! Variables which are inputs to the module (usually set in init_pdaf)
-  logical :: assim_o_chl_cci      ! Whether to assimilate data
+  logical :: assim_o_rrs_cci      ! Whether to assimilate data
 
-  ! Further variables specific for the OC CCO chlorophyll observations
-  character(len=100) :: path_obs_chl_cci  = ''      ! Path to observations
-  character(len=110) :: file_chl_cci_prefix  = ''   ! file name prefix for observations 
-  character(len=110) :: file_chl_cci_suffix  = '.nc'! file name suffix for observations 
+  ! Further variables specific for the OC CCO rrs backscatter radiances observations
+  character(len=100) :: path_obs_rrs_cci  = ''      ! Path to observations
+  character(len=110) :: file_rrs_cci_prefix  = ''   ! file name prefix for observations 
+  character(len=110) :: file_rrs_cci_suffix  = '.nc'! file name suffix for observations 
 
-  real    :: rms_obs_chl_cci      ! Observation error standard deviation
-  real    :: bias_obs_chl_cci     ! Observation bias
+  
+  real    :: bias_obs_rrs_cci     ! Observation bias
 
-  real    :: lradius_chl_cci      ! Localization radius in the ocean
-  real    :: sradius_chl_cci      ! Support radius for localization function
+  real    :: lradius_rrs_cci      ! Localization radius in the ocean
+  real    :: sradius_rrs_cci      ! Support radius for localization function
 
-  logical :: chl_cci_exclude_ice  ! Whether to exclude observations at grid points with ice
-  real    :: chl_cci_exclude_diff ! Limit difference beyond which observations are excluded (0.0 to deactivate)
-  logical :: chl_cci_fixed_rmse   ! Whether to use a fixed RMS error or the error provided with the data
+  logical :: rrs_cci_exclude_ice  ! Whether to exclude observations at grid points with ice
+  !real    :: rrs_cci_exclude_diff ! Limit difference beyond which observations are excluded (0.0 to deactivate)
+  logical :: rrs_cci_fixed_rmse   ! Whether to use a fixed RMS error or the error provided with the data
 
-  real, allocatable :: mean_chl_cci_p (:)    ! Mean value for observation exclusion
-  real, allocatable :: loc_radius_chl_cci(:) ! Localization radius array
+  real, allocatable :: mean_rrs_cci_p (:)    ! Mean value for observation exclusion
+  real, allocatable :: loc_radius_rrs_cci(:) ! Localization radius array
   real, allocatable :: ivariance_obs_g(:)    ! Global-earth inverse observation variances
   
-  logical :: chl_logarithmic = .true.        ! Whether to apply log-transformation
+  !logical :: rrs_logarithmic = .true.        ! Whether to apply log-transformation
   
   character(len=300) :: path_bias
   character(len=100) :: file_bias_prefix
   
   real, parameter :: base10toE = 2.302585092994 ! = 1.0/(LOG10(EXP(1.0)))
+  
+  ! Spectral Bands
+  integer, parameter :: nbands_rrs = 6
+  character(len=3), parameter :: band_str(nbands_rrs) = &
+       (/ '412', '443', '490', '510', '560', '665' /)
+  real, parameter :: obs_wavelength(nbands_rrs) = &
+       (/ 412.0, 443.0, 490.0, 510.0, 560.0, 665.0 /)  
+
+  real, parameter :: model_lam(tlam) = &
+       (/ 400.0, 425.0, 450.0, 475.0, 500.0, 525.0, 550.0, 575.0, &
+          600.0, 625.0, 650.0, 675.0, 700.0 /) 
+          
+  real :: Q_factor = 3.0            ! Q-factor eq. 11 Evas paper
+  real    :: rms_obs_rrs_cci(nbands_rrs)      ! Observation error standard deviation
+  
 
 ! ***********************************************************************
 ! *** The following two data types are used in PDAFomi                ***
@@ -179,7 +196,7 @@ contains
 !!
 !! Further variables are set when the routine PDAFomi_gather_obs is called.
 !!
-  subroutine init_dim_obs_chl_cci(step, dim_obs)
+  subroutine init_dim_obs_rrs_cci(step, dim_obs)
 
     use PDAF, &
          only: PDAFomi_gather_obs
@@ -206,17 +223,20 @@ contains
     integer, intent(inout) :: dim_obs    !< Dimension of full observation vector
 
 ! *** Local variables ***
-    integer :: i, iter_file, i_obs       ! Counters
+    integer :: i, b, iter_file, i_obs       ! Counters
     integer :: dim_obs_p                 ! number of PE-local observations
+    integer :: dim_ops_p_band			 ! number of PE-local in one specteral band
     integer :: fileid                    ! ID for NetCDF file
     integer :: id_state, id_std          ! ID for state
     integer :: stat(100)                 ! Status for NetCDF functions
     integer :: startv(2),countv(2)       ! Vectors for reading fields
     character(len=5)   :: mype_string    ! String for process rank
     character(len=100) :: obs_file = ''     ! Complete name of observation file without path
-    real(4), allocatable :: all_obs_p(:)    ! PE-local complete observation field read from file
-    real(4), allocatable :: all_std_p(:)    ! PE-local complete observation error field read from file
-    real, allocatable :: obs_error_p(:)     ! PE-local observation error
+    character(len=20)  :: varname_obs, varname_std ! varible name in obs file
+    real(4), allocatable :: all_obs_p(:,:)    ! PE-local complete observation field read from file
+    real(4), allocatable :: all_std_p(:,:)    ! PE-local complete observation error field read from file
+
+    real, allocatable 	:: obs_error_p(:) 	! PE-local obs error
     real, allocatable :: obs_p(:)           ! PE-local observed field
     real, allocatable :: ivariance_obs_p(:) ! PE-local inverse observation error variance
     real, allocatable :: ocoord_n2d_p(:,:)  ! PE-local coordinates of observations
@@ -227,19 +247,26 @@ contains
     real, allocatable :: ivar_obs_g(:)      ! Global full inverse variances (used in case of limited obs.)
     real, allocatable :: ocoord_g(:,:)      ! Global full observation coordinates (used in case of limited obs.)
     integer, allocatable :: obs_include_index(:)   ! Index of observed (not excluded!) surface nodes on process domain
+    integer, allocatable :: obs_band_index(:)	   ! Index of spectral band 
     integer :: dim_obs_f                      ! Global full observation number
+    
+    integer :: l_lo, l_hi                    ! Bracketing model-band indices
+    real    :: w_lo, w_hi                    ! Interpolation weights
+    integer :: l_lo_band(nbands_rrs), l_hi_band(nbands_rrs)
+    real    :: w_lo_band(nbands_rrs), w_hi_band(nbands_rrs)
+
     
     character(len=300) :: bias_file = ''     ! Complete name of observation file without path
     integer :: fileidbias                    ! ID for NetCDF file
     integer :: id_bias                       ! ID for state
-    real(4), allocatable :: all_bias_p(:)    ! PE-local complete observation field read from file
+    real(4), allocatable :: all_bias_p(:,:)    ! PE-local complete observation field read from file
 
 ! *********************************************
 ! *** Initialize full observation dimension ***
 ! *********************************************
 
     ! Store whether to assimilate this observation type
-    if (assim_o_chl_cci) thisobs%doassim = 1
+    if (assim_o_rrs_cci) thisobs%doassim = 1
 
     ! Specify type of distance computation
     thisobs%disttype = 2   ! 2=Geographic
@@ -249,15 +276,15 @@ contains
     thisobs%ncoord = 2
 
     ! Initialize flag for type of full observations
-    if (mype_filter==0) write(*,*) 'obs_chl_cci_pdafomi: use_global_obs', use_global_obs
+    if (mype_filter==0) write(*,*) 'obs_rrs_cci_pdafomi: use_global_obs', use_global_obs
     thisobs%use_global_obs = use_global_obs
 
     ! set localization radius
-    lradius_chl_cci = cradius
-    sradius_chl_cci = sradius
-    if (allocated(loc_radius_chl_cci)) deallocate(loc_radius_chl_cci)
-    allocate(loc_radius_chl_cci(mydim_nod2d))
-    loc_radius_chl_cci(:) = lradius_chl_cci
+    lradius_rrs_cci = cradius
+    sradius_rrs_cci = sradius
+    if (allocated(loc_radius_rrs_cci)) deallocate(loc_radius_rrs_cci)
+    allocate(loc_radius_rrs_cci(mydim_nod2d))
+    loc_radius_rrs_cci(:) = lradius_rrs_cci
 
 
 ! **********************************
@@ -267,13 +294,13 @@ contains
     ! Initialize complete file name
     write(mype_string,'(i5.5)') mype_filter
 
-    obs_file =trim(file_chl_cci_prefix)//trim(mype_string)//trim(file_chl_cci_suffix)
+    obs_file =trim(file_rrs_cci_prefix)//trim(mype_string)//trim(file_rrs_cci_suffix)
     bias_file=trim(path_bias)//trim(file_bias_prefix)//trim(mype_string)//'.nc'
 
     ! Allocate array
-    allocate(all_obs_p (myDim_nod2D))
-    allocate(all_std_p (myDim_nod2D))
-    allocate(all_bias_p(myDim_nod2D))
+    allocate(all_obs_p (myDim_nod2D,nbands_rrs ))
+    allocate(all_std_p (myDim_nod2D,nbands_rrs))
+    allocate(all_bias_p(myDim_nod2D,nbands_rrs))
 
     ! Position to read from file
     iter_file = daynew
@@ -281,48 +308,58 @@ contains
     ! Debugging message:
     if (mype_filter==0) then
        write (*,'(a,5x,a,i2,a,i2,a,i4,a,f5.2,a,i)') &
-            'FESOM-PDAF', 'Assimilate OC-CCI observations - OBS_CHL_CCI_PDAFOMI at ', &
+            'FESOM-PDAF', 'Assimilate OC-CCI observations - OBS_rrs_CCI_PDAFOMI at ', &
             day_in_month, '.', month, '.', yearnew, ' ', timenew/3600.0,&
             ' h; read at ', iter_file
     end if
 
     ! Read observation
          
-    stat(1) = NF_OPEN(trim(path_obs_chl_cci)//trim(obs_file), NF_NOWRITE, fileid)        
- 
-    ! *** Read state estimate ***
-
-    stat(2) = NF_INQ_VARID(fileid, 'obs', id_state)
-
-    startv(2) = iter_file
-    countv(2) = 1
-    startv(1) = 1
-    countv(1) = myDim_nod2D 
-
-    stat(3) = NF_GET_VARA_REAL (fileid, id_state, startv, countv, all_obs_p)
+    stat(1) = NF_OPEN(trim(path_obs_rrs_cci)//trim(obs_file), NF_NOWRITE, fileid)     
     
-    ! *** Read standard deviation ***
-    ! Root-mean-square-difference of log10-transformed chlorophyll-a concentration in seawater.
-   
-    stat(4) = NF_INQ_VARID(fileid, 'std', id_std)
-   
-    startv(2) = iter_file
-    countv(2) = 1
-    startv(1) = 1
-    countv(1) = myDim_nod2D 
-   
-    stat(5) = NF_GET_VARA_REAL (fileid, id_std, startv, countv, all_std_p)
+    do b = 1, tlam
+    
+		varname_obs = 'obs_'//trim(band_str(b))
+        varname_std = 'std_'//trim(band_str(b))
 
-    ! *** close file  ***
-    stat(6) = NF_CLOSE(fileid)
  
-    ! check status flag
-    do i=1,6
-       if (stat(i).ne.NF_NOERR) write(*,*) &
-            'NetCDF error in reading full OC_CCI, no.',i, &
-            ' file ',obs_file
-       stat(i)=0
-    end do
+		! *** Read state estimate ***
+
+		stat(2) = NF_INQ_VARID(fileid, varname_obs, id_state)
+
+		startv(2) = iter_file
+		countv(2) = 1
+		startv(1) = 1
+		countv(1) = myDim_nod2D 
+
+		stat(3) = NF_GET_VARA_REAL (fileid, id_state, startv, countv, all_obs_p(:,b))
+    
+		! *** Read standard deviation ***
+		! Root-mean-square-difference of log10-transformed rrsorophyll-a concentration in seawater.
+   
+		stat(4) = NF_INQ_VARID(fileid, varname_std, id_std)
+	   
+		startv(2) = iter_file
+		countv(2) = 1
+		startv(1) = 1
+		countv(1) = myDim_nod2D 
+	   
+		stat(5) = NF_GET_VARA_REAL (fileid, id_std, startv, countv, all_std_p(:,b))
+
+   
+ 
+		! check status flag
+		do i=1,6
+		   if (stat(i).ne.NF_NOERR) write(*,*) &
+				'NetCDF error in reading full OC_CCI, band.',trim(band_str(b)),'no,',i, &
+				' file ',obs_file
+		   stat(i)=0
+		end do
+	
+	end do
+		
+	! *** close file  ***
+    stat(6) = NF_CLOSE(fileid)
     
 ! ***********************************
 ! *** Read PE-local bias FREE-OBS ***
@@ -331,43 +368,48 @@ contains
     ! Debugging message:
     if ((mype_filter==0) .and. (iter_file==1)) then
        write (*,'(a,5x,a,i2,a,i2,a,i4,a,f5.2,a,i)') &
-            'FESOM-PDAF', 'De-Bias OC-CCI observations - OBS_CHL_CCI_PDAFOMI at ', &
+            'FESOM-PDAF', 'De-Bias OC-CCI observations - OBS_rrs_CCI_PDAFOMI at ', &
             day_in_month, '.', month, '.', yearnew, ' ', timenew/3600.0,&
             ' h; read at ', iter_file
     end if
     
-    if (bias_obs_chl_cci/=0.0) then
-       
-       ! Read bias
-         
-        stat(1) = NF_OPEN(trim(bias_file), NF_NOWRITE, fileidbias)        
-	    
-        ! *** Read state estimate ***
-	    
-        stat(2) = NF_INQ_VARID(fileidbias, 'bias', id_bias)
-	    
-        startv(2) = iter_file
-        countv(2) = 1
-        startv(1) = 1
-        countv(1) = myDim_nod2D 
-	    
-        stat(3) = NF_GET_VARA_REAL (fileidbias, id_bias, startv, countv, all_bias_p)
-	    
-        ! *** close file  ***
-        stat(4) = NF_CLOSE(fileidbias)
-	    
-        ! check status flag
-        do i=1,4
-           if (stat(i).ne.NF_NOERR) write(*,*) &
-                'NetCDF error in reading OC_CCI Bias, no.',i, &
-                ' file ', trim(bias_file)
-           stat(i)=0
-        end do
-       
-    else
-       all_bias_p(:)=0
-    endif
+    do b =1, tlam
+    
+    
+		if (bias_obs_rrs_cci/=0.0) then
+		   
+		   ! Read bias
+		   bias_file = trim(path_bias)//trim(file_bias_prefix)//trim(band_str(b))// &
+               '_'//trim(mype_string)//'.nc'
+			 
+			stat(1) = NF_OPEN(trim(bias_file), NF_NOWRITE, fileidbias)        
+			
+			! *** Read state estimate ***
+			
+			stat(2) = NF_INQ_VARID(fileidbias, 'bias', id_bias)
+			
+			startv(2) = iter_file
+			countv(2) = 1
+			startv(1) = 1
+			countv(1) = myDim_nod2D 
+			
+			stat(3) = NF_GET_VARA_REAL (fileidbias, id_bias, startv, countv, all_bias_p(:,b))
+			
+			! *** close file  ***
+			stat(4) = NF_CLOSE(fileidbias)
+			
+			! check status flag
+			do i=1,4
+			   if (stat(i).ne.NF_NOERR) write(*,*) &
+					'NetCDF error in reading OC_CCI Bias, band.',trim(band_str(b)),'no,',i, &
+					' file ', trim(bias_file)
+			   stat(i)=0
+			end do
+		   
+		
+		endif
 
+	end do
 
 ! ****************************
 ! *** Exclude observations ***
@@ -375,18 +417,20 @@ contains
 
     ! *** Exclude observations if mean_ice is not zero ***
 
-    exclude_ice: if (chl_cci_exclude_ice) then
+    exclude_ice: if (rrs_cci_exclude_ice) then
 
        cnt_ex_ice_p = 0
-       do i = 1, myDim_nod2D
-          if ((mean_ice_p(i) > 0.0) &
-             .and. &
-              (abs(all_obs_p(i))<999.0)) &
-          then
-             all_obs_p(i) = 1.0e6
-             cnt_ex_ice_p = cnt_ex_ice_p + 1
-          end if
-       end do
+       do b = 1, tlam
+		   do i = 1, myDim_nod2D
+			  if ((mean_ice_p(i) > 0.0) &
+				 .and. &
+				  (abs(all_obs_p(i,b))<999.0)) &
+			  then
+				 all_obs_p(i,b) = 1.0e6
+				 cnt_ex_ice_p = cnt_ex_ice_p + 1
+			  end if
+		   end do
+	    end do
        
        ! *** Sum PE-local excluded nodes to global number of nodes excluded ***
 
@@ -404,34 +448,11 @@ contains
             '--- Set localization radius to zero for points with ice'
        do i = 1, myDim_nod2D
           if (mean_ice_p (i) > 0.0) then
-             loc_radius_chl_cci(i) = 0.0
+             loc_radius_rrs_cci(i) = 0.0
           end if
        end do
 
     end if exclude_ice
-
-
-    ! *** Exclude observations if difference from ensemble mean is beyond limit CHL_EXCLUDE_DIFF ***
-
-    exclude_diff: if (chl_cci_exclude_diff > 0.0) then
-
-       cnt_ex_diff_p = 0
-       do i = 1, myDim_nod2D
-          if (abs(mean_chl_cci_p(i) - all_obs_p(i)) > chl_cci_exclude_diff .and. abs(all_obs_p(i))<=999.0) then
-             all_obs_p(i) = 1.0e6
-             cnt_ex_diff_p = cnt_ex_diff_p+1
-          end if
-       end do
-
-       call MPI_Allreduce(cnt_ex_diff_p, cnt_ex_diff, 1, MPI_INTEGER, MPI_SUM, &
-            COMM_filter, MPIerr)
-
-       if (mype_filter == 0) &
-            write (*,'(a,5x,a,f6.2,a,i7)') 'FESOM-PDAF', &
-            '--- Chlorophyll CCI Observations excluded due to difference >',chl_cci_exclude_diff,'mg chl m-3:', cnt_ex_diff
-
-    end if exclude_diff
-  
 
 ! ***********************************************************
 ! *** Count available observations for the process domain ***
@@ -440,9 +461,11 @@ contains
 
     ! *** Count PE-local number of observations ***
     dim_obs_p = 0
-    do i = 1, myDim_nod2d
-       if (abs(all_obs_p(i)) < 999.0) dim_obs_p=dim_obs_p+1
-    enddo
+    do b =1, tlam
+		do i = 1, myDim_nod2d
+		   if (abs(all_obs_p(i,b)) < 999.0) dim_obs_p=dim_obs_p+1
+		end do
+	end do
 
     haveobs: if(dim_obs_p>0) then
     
@@ -453,45 +476,48 @@ contains
 		
 		allocate(thisobs%id_obs_p(2, dim_obs_p))
 		allocate(obs_include_index(dim_obs_p))
+        allocate(thisobs%icoeff_p(2, dim_obs_p))
+        allocate(obs_band_index(dim_obs_p))
 
 		i_obs=0
-		do i = 1, myDim_nod2d
-		   if (abs(all_obs_p(i)) < 999.0) then
-			  i_obs = i_obs + 1
-			  
-			  ! index for state vector
-			  ! row 1: DiaChl
-			  thisobs%id_obs_p(1, i_obs) = &
-			  (i-1) * (nlmax) + 1 + sfields(id% DiaChl)%off
-			  
-			  ! row 2: PhyChl
-			  thisobs%id_obs_p(2, i_obs) = &
-			  (i-1) * (nlmax) + 1 + sfields(id% PhyChl)%off
-			  
-			  ! index for all_obs_p and surface nod2d vector, respectively. 
-			  obs_include_index(i_obs) = i
-		   endif
-		enddo
+		do b = 1, tlam
+			do i = 1, myDim_nod2d
+			   if (abs(all_obs_p(i,b)) < 999.0) then
+				  i_obs = i_obs + 1
+				  
+				  ! index for state vector
+				  ! row 1: lower band
+				  thisobs%id_obs_p(1, i_obs) = &
+				  (i-1) * (nlmax) + 1 + sfields(id%Eutop3D(l_lo_band(b)))%off
+				  
+				  ! row 2: higher band
+				  thisobs%id_obs_p(2, i_obs) = &
+				  (i-1) * (nlmax) + 1 + sfields(id% Eutop3D(l_hi_band(b)))%off
+				  
+				  thisobs%icoeff_p(1, i_obs) = w_lo_band(b)
+                  thisobs%icoeff_p(2, i_obs) = w_hi_band(b)
+				  
+				  ! index for all_obs_p and surface nod2d vector, respectively. 
+				  obs_include_index(i_obs) = i
+				  obs_band_index(i_obs)    = b
+			   endif
+			enddo
+		end do
+		
 
 		! *** Initialize PE-local vectors of observations ***
 		allocate(obs_p(dim_obs_p))
 		allocate(obs_error_p(dim_obs_p))
 		
 		do i = 1, dim_obs_p
-		   if (chl_logarithmic) then
-		                       !      ** log-transformation of chlorophyll **    ** de-bias observations **
-		      obs_p(i)       = real(  log(all_obs_p(obs_include_index(i)))       + all_bias_p(obs_include_index(i)), 8)
-		                       ! logarithmic error is provided
-		      obs_error_p(i) = base10toE * real(all_std_p(obs_include_index(i)), 8)
-		   else
-		                       ! chlorophyll is provided
-		      obs_p(i)       = real(all_obs_p(obs_include_index(i)), 8)
-		                      ! logarithmic error from file (all_std_p) serves as relative error here,
-		                      ! which holds for relative errors << 1
-		      obs_error_p(i) = real(all_std_p(obs_include_index(i)), 8) * real(all_obs_p(obs_include_index(i)), 8)
+			b = obs_band_index(i)
+			! de-bias observed Rrs 
+            obs_p(i)       = real(all_obs_p(obs_include_index(i), b), 8) &
+                            + real(all_bias_p(obs_include_index(i), b), 8)
+            obs_error_p(i) = real(all_std_p(obs_include_index(i), b), 8)
+            
+       end do
 
-		   endif
-		enddo
 
 		! *** Initialize coordinate arrays for PE-local observations
 		allocate(ocoord_n2d_p(2, dim_obs_p))
@@ -506,14 +532,17 @@ contains
 	! *** Define observation errors for process-local observations ***
 	! ****************************************************************
 
-		if (chl_cci_fixed_rmse) then
+		if (rrs_cci_fixed_rmse) then
 
 		   ! *** Set constant observation error *** 
 		   if (mype_filter == 0) &
 				write (*, '(a, 5x, a, f12.3, a)') 'FESOM-PDAF', &
-				'--- Use global OC-CCI observation error of ', rms_obs_chl_cci, 'mg chl m-3'
+				'--- Use global OC-CCI observation error of ', rms_obs_rrs_cci, 'W/m^3'
 
-		   obs_error_p(:) = rms_obs_chl_cci
+		   do i = 1, dim_obs_p
+             b = obs_band_index(i)
+             obs_error_p(i) = rms_obs_rrs_cci(b)
+          end do
 		else
 		
           ! *** Use variable error from file
@@ -536,25 +565,32 @@ contains
 		allocate(ivariance_obs_p(1))
 		allocate(ocoord_n2d_p(2, 1))
 		allocate(thisobs%id_obs_p(2,1))
+		allocate(thisobs%icoeff_p(2,1))
 		thisobs%id_obs_p = 0
+		thisobs%icoeff_p = 0.0
 		
 		allocate(obs_include_index(1))
+		allocate(obs_band_index(1))
 		allocate(obs_error_p(1))
 		
-	endif haveobs
+	end if haveobs
 
 ! *******************************************
 ! *** No global observations? - Fictional ***
 ! *******************************************
 
     if (dim_obs_p==0) then
-       obs_p=1.0
-       ivariance_obs_p=1E-12
-       ocoord_n2d_p(1,1)=1.57
-       ocoord_n2d_p(2,1)=0.0
-       thisobs%id_obs_p(1,1)=sfields(id% PhyChl)%off + 1
-       thisobs%id_obs_p(2,1)=sfields(id% DiaChl)%off + 1
-       dim_obs_p=1
+		do b=1, tlam
+		   obs_p=1.0
+		   ivariance_obs_p=1E-12
+		   ocoord_n2d_p(1,1)=1.57
+		   ocoord_n2d_p(2,1)=0.0
+		   thisobs%id_obs_p(1,1)=sfields(id%Eutop3D(l_lo_band(b)))%off + 1
+		   thisobs%id_obs_p(2,1)=sfields(id%Eutop3D(l_hi_band(b)))%off + 1
+		   thisobs%icoeff_p(1,1) = 1.0
+           thisobs%icoeff_p(2,1) = 0.0
+		   dim_obs_p=1
+		 end do
     endif
 
 ! **************************************
@@ -562,7 +598,7 @@ contains
 ! **************************************
 
     call PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivariance_obs_p, ocoord_n2d_p, &
-         thisobs%ncoord, lradius_chl_cci, dim_obs)
+         thisobs%ncoord, lradius_rrs_cci, dim_obs)
          
     ! Global inverse variance array (thisobs%ivar_obs_f)
     ! has been gathered, but, in case of coupled DA / "double-sweep",
@@ -584,7 +620,7 @@ contains
     deallocate(obs_p, ocoord_n2d_p, ivariance_obs_p)
     if (allocated(obs_include_index)) deallocate(obs_include_index)
 
-  end subroutine init_dim_obs_chl_cci
+  end subroutine init_dim_obs_rrs_cci
 
 
 
@@ -600,7 +636,7 @@ contains
 !!
 !! The routine is called by all filter processes.
 !!
-  subroutine obs_op_chl_cci(dim_p, dim_obs, state_p, ostate)
+  subroutine obs_op_rrs_cci(dim_p, dim_obs, state_p, ostate)
 
     use PDAF, &
          only: PDAFomi_gather_obsstate
@@ -616,6 +652,7 @@ contains
 ! *** Local ***
     real, allocatable   :: ostate_p(:)           !< Pe-local observed state
     integer :: i                                 !< Counter
+    real :: R0, RRS_0min						 ! optical values
 
 
 ! ******************************************************
@@ -630,14 +667,18 @@ contains
           allocate(ostate_p(1))
        end if
        
-       ! Initialize observed pe-local state vector by sum of rows 1 and 2 (DiaChl and PhyChl)
+       ! Initialize observed pe-local state vector by sum of rows 1 and 2 (DiaChl and Phyrrs)
        do i = 1, thisobs%dim_obs_p
-          if (chl_logarithmic) then
-             ! log-transform
-             ostate_p(i) = log(state_p(thisobs%id_obs_p(1,i)) + state_p(thisobs%id_obs_p(2,i)))
-          else
-             ostate_p(i) = state_p(thisobs%id_obs_p(1,i)) + state_p(thisobs%id_obs_p(2,i))
-          endif
+		! *** Linear interpolation of R0(lambda) between bracketing model bands ***
+          R0 = thisobs%icoeff_p(1,i) * state_p(thisobs%id_obs_p(1,i)) &
+             + thisobs%icoeff_p(2,i) * state_p(thisobs%id_obs_p(2,i))
+
+          ! *** Convert to remote-sensing reflectance just above the surface ***
+          RRS_0min  = R0 / Q_factor
+          ostate_p(i) = (0.52 * RRS_0min) / (1.0 - 1.7 * RRS_0min)
+       
+       
+       
        end do
        
        ! *** Global: Gather full observed state vector
@@ -648,7 +689,7 @@ contains
        
     end if
 
-  end subroutine obs_op_chl_cci
+  end subroutine obs_op_rrs_cci
 
 
 !-------------------------------------------------------------------------------
@@ -667,7 +708,7 @@ contains
 !! different localization radius and localization functions
 !! for each observation type and  local analysis domain.
 !!
-  subroutine init_dim_obs_l_chl_cci(domain_p_all, step, dim_obs, dim_obs_l)
+  subroutine init_dim_obs_l_rrs_cci(domain_p_all, step, dim_obs, dim_obs_l)
 
     ! Include PDAFomi function
     use PDAF, only: PDAFomi_init_dim_obs_l
@@ -699,9 +740,9 @@ contains
 
        if (loctype == 1) then
           ! *** Variable localization radius for fixed effective observation dimension ***
-          call get_adaptive_lradius_pdaf(thisobs, domain_p, lradius_chl_cci, loc_radius_chl_cci)
+          call get_adaptive_lradius_pdaf(thisobs, domain_p, lradius_rrs_cci, loc_radius_rrs_cci)
        end if
-       lradius_chl_cci = loc_radius_chl_cci(domain_p)
+       lradius_rrs_cci = loc_radius_rrs_cci(domain_p)
 
        
        ! ************************************************************
@@ -716,14 +757,14 @@ contains
 
              if (mype_filter==0) &
                   write (*,'(a,4x,a)') 'FESOM-PDAF', &
-                   '--- PHY sweep: set ivar_obs_f for CHL to 1.0e-12'
+                   '--- PHY sweep: set ivar_obs_f for rrs to 1.0e-12'
              thisobs%ivar_obs_f = 1.0e-12
              
           ! BGC observations sweep.
           elseif (domain_p_all==myDim_nod2D+1) then
              if (mype_filter==0) &
                   write (*,'(a,4x,a)') 'FESOM-PDAF', &
-                  '--- BIO sweep: set ivar_obs_f for CHL to original'
+                  '--- BIO sweep: set ivar_obs_f for rrs to original'
              thisobs%ivar_obs_f(:) = ivariance_obs_g
           end if
        end if ! n_sweeps
@@ -733,10 +774,46 @@ contains
        ! **********************************************
 
        call PDAFomi_init_dim_obs_l(thisobs_l, thisobs, coords_l, &
-            locweight, lradius_chl_cci, sradius_chl_cci, dim_obs_l)
+            locweight, lradius_rrs_cci, sradius_rrs_cci, dim_obs_l)
 
     end if
 
-  end subroutine init_dim_obs_l_chl_cci
+  end subroutine init_dim_obs_l_rrs_cci
+  
+  !Subrutine to get weights for interpolation and check if band is not in spectra
+  
+  subroutine get_band_weights(lam_obs, l_lo, l_hi, w_lo, w_hi)
 
-end module obs_chl_cci_pdafomi
+    implicit none
+
+! *** Arguments ***
+    real, intent(in)     :: lam_obs   !< Observation wavelength [nm]
+    integer, intent(out) :: l_lo, l_hi !< Bracketing indices into model_lam(:)
+    real, intent(out)    :: w_lo, w_hi !< Interpolation weights (sum to 1)
+
+! *** Local variables ***
+    integer :: l
+
+    if (lam_obs <= model_lam(1)) then
+       l_lo = 1; l_hi = 1; w_lo = 1.0; w_hi = 0.0
+       return
+    end if
+    if (lam_obs >= model_lam(tlam)) then
+       l_lo = tlam; l_hi = tlam; w_lo = 1.0; w_hi = 0.0
+       return
+    end if
+
+    do l = 1, tlam-1
+       if (lam_obs >= model_lam(l) .and. lam_obs <= model_lam(l+1)) then
+          l_lo = l
+          l_hi = l+1
+          w_hi = (lam_obs - model_lam(l)) / (model_lam(l+1) - model_lam(l))
+          w_lo = 1.0 - w_hi
+          return
+       end if
+    end do
+
+  end subroutine get_band_weights
+
+
+end module obs_rrs_cci_pdafomi

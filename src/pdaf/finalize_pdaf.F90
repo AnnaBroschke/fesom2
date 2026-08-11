@@ -12,6 +12,8 @@ subroutine finalize_pdaf()
        only: mype_ens, npes_ens, comm_ensemble, mpierr
   use timer, &
        only: timeit, time_tot
+  use statevector_pdaf, &
+       only: id
 
   call timeit(5, 'old')
   call timeit(1, 'old')
@@ -24,7 +26,11 @@ subroutine finalize_pdaf()
   if (mype_ens==0) call PDAF_print_info(3)
 
   ! Deallocate PDAF arrays
-  call PDAF_deallocate()
+#ifdef __RECOM_WAVEBANDS
+  deallocate (id%Edz3D , id%Esz3D, id%Euz3D, id%Eutop3D )     
+#endif
+
+!call PDAF_deallocate()
 
   if (mype_ens==0) then
      write (*, '(/a,10x,a)') 'PDAF', 'Model-sided timing overview'
